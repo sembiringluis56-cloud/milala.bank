@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#0b172d">
+  <meta name="description" content="MILALA BANK Core Banking System — prototipe simulasi perbankan untuk pembelajaran berbasis HTML, CSS dan JavaScript.">
+  <title>MILALA BANK — Core Banking System</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+
+  <!-- Firebase SDK (harus di atas script aplikasi) -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+  <script>
+    window.FIREBASE_CONFIG = {
+       apiKey: "AIzaSyBGQXrvodlP8Umrg3NL5Xn28xdzCJNGb4w",
+    authDomain: "luis-sistem-informasi.firebaseapp.com",
+    databaseURL: "https://luis-sistem-informasi-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "luis-sistem-informasi",
+    storageBucket: "luis-sistem-informasi.firebasestorage.app",
+    messagingSenderId: "592130766717",
+    appId: "1:592130766717:web:db9459bd0f2c8204187e14",
+    measurementId: "G-CT0MZQH7C2"
+    };
+  </script>
+
+  <script defer src="assets/js/seed.js"></script>
+  <script defer src="assets/js/store.js"></script>
+  <script defer src="assets/js/app.js"></script>
+</head>
+<body>
+  <div id="app"></div>
+  <div id="toast-root" role="status" aria-live="polite"></div>
+  <div id="modal-root"></div>
+</body>
+</html>
