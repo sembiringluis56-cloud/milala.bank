@@ -1,0 +1,15 @@
+{
+  "name": "milala-bank-spark-vercel",
+  "version": "1.0.0",
+  "private": true,
+  "description": "MILALA BANK educational simulation using Firebase Spark and Vercel Functions",
+  "engines": {
+    "node": "22.x"
+  },
+  "scripts": {
+    "check": "node scripts/validate-package.js"
+  },
+  "dependencies": {
+    "firebase-admin": "^13.5.0"
+  }
+}
