@@ -14,7 +14,7 @@ flowchart TD
     I -- Ya --> K[Konfirmasi transaksi]
     K --> L[Siapkan transaksi + 2 entri jurnal]
     L --> M[Siapkan aktivitas audit]
-    M --> N{LocalStorage menerima penulisan?}
+    M --> N{Vercel API memvalidasi dan menyimpan perubahan?}
     N -- Tidak --> O[Pesan kesalahan; tidak ada perubahan cache yang dikomit]
     N -- Ya --> P[Render saldo, mutasi, dan laporan terbaru]
     P --> Q([Selesai])

@@ -1,0 +1,25 @@
+MILALA BANK — FIREBASE REALTIME PATCH (AMAN UNTUK REPOSITORY YANG SUDAH ADA)
+
+Paket ini hanya berisi 2 file JavaScript yang diperbaiki:
+- assets/js/store.js
+- assets/js/app.js
+
+index.html TIDAK disertakan karena pemeriksaan di website sudah menunjukkan Firebase SDK dan konfigurasi termuat (window.firebase, FIREBASE_CONFIG, dan 3 script terdeteksi). Pertahankan index.html yang sekarang.
+
+CARA PASANG MELALUI GITHUB DESKTOP
+1. Backup Firebase Realtime Database: Firebase Console > Realtime Database > Data > Export JSON. Simpan file backup.
+2. Backup repository GitHub (buat branch backup atau unduh ZIP repository).
+3. Ekstrak paket patch ini.
+4. Buka repository lokal menggunakan GitHub Desktop, lalu pilih Repository > Show in Explorer/Finder.
+5. Salin assets/js/store.js dan assets/js/app.js dari paket patch ke folder assets/js pada repository lokal. Pilih Replace/Timpa untuk kedua file tersebut.
+6. Jangan hapus file lain. Jangan ganti seed.js atau index.html. Jangan tekan menu Reset Data di aplikasi.
+7. Di GitHub Desktop, periksa Changes: hanya assets/js/store.js dan assets/js/app.js yang berubah.
+8. Commit dengan pesan: Fix Firebase Realtime sync, lalu Push origin.
+9. Vercel akan membuat deployment otomatis. Tunggu status Ready. Pastikan commit masuk ke Production Branch Vercel (umumnya main) agar domain utama diperbarui.
+10. Buka website, hard refresh (Ctrl+Shift+R), lalu uji dengan satu nasabah fiktif. Periksa Firebase Realtime Database > Data > milala_core_banking > customers. Uji juga dari HP.
+
+PENTING TENTANG DATA
+- Paket patch hanya mengubah file kode website. Paket ini tidak berisi database dan tidak menghapus data Firebase.
+- Jangan menghapus node /milala_core_banking. Jangan gunakan fitur Reset Data atau Restore selama pemasangan.
+- Jika folder project di repository berada di dalam subfolder (misalnya /milala-bank), letakkan assets/js/store.js dan app.js pada folder assets/js di dalam subfolder tersebut, bukan di root yang berbeda. Ikuti lokasi file app.js/store.js yang saat ini dipakai website.
+- Uji hanya dengan data fiktif. Prototipe belum menggunakan Firebase Authentication; jangan simpan data nasabah, identitas, password, atau transaksi sungguhan.

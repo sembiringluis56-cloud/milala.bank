@@ -1,19 +1,20 @@
 # Entity Relationship Diagram — MILALA BANK
 
-ERD berikut adalah **model basis data konseptual** untuk kemungkinan backend di masa depan, bukan basis data aktif pada prototipe. Versi HTML saat ini menggunakan objek JSON LocalStorage.
+Data bisnis lama tetap dipertahankan pada node `/milala_core_banking`. Browser tidak membaca atau menulis node ini secara langsung; Vercel Serverless Functions menggunakan Admin SDK setelah memvalidasi Firebase ID token, identitas, dan role.
 
 ```mermaid
 erDiagram
-    BRANCH ||--o{ USER : employs
+    BRANCH ||--o{ STAFF_PROFILE : assigns
     BRANCH ||--o{ CUSTOMER : serves
     BRANCH ||--o{ ACCOUNT : manages
     CUSTOMER ||--o{ ACCOUNT : owns
+    CUSTOMER ||--o| CUSTOMER_PROFILE : accesses_portal
     CUSTOMER ||--o{ LOAN : borrows
     ACCOUNT ||--o{ LOAN : receives_disbursement
-    USER ||--o{ TRANSACTION : records
-    USER ||--o{ AUDIT_LOG : performs
+    STAFF_PROFILE ||--o{ TRANSACTION : records
+    STAFF_PROFILE ||--o{ AUDIT_LOG : performs
     TRANSACTION ||--|{ JOURNAL_ENTRY : posts
-    USER ||--o{ LOAN : approves
+    STAFF_PROFILE ||--o{ LOAN : approves
     BRANCH {
         string id PK
         string code UK
@@ -21,13 +22,18 @@ erDiagram
         string city
         boolean active
     }
-    USER {
-        string id PK
-        string email UK
-        string name
-        string password_demo
+    STAFF_PROFILE {
+        string uid PK
+        string staffId UK
+        string email
         string role
         string branch FK
+        boolean active
+    }
+    CUSTOMER_PROFILE {
+        string uid PK
+        string customerId FK
+        string email
         boolean active
     }
     CUSTOMER {
@@ -35,6 +41,7 @@ erDiagram
         string name
         string identity_demo UK
         string branch FK
+        string authUid
         string status
     }
     ACCOUNT {
@@ -78,4 +85,13 @@ erDiagram
     }
 ```
 
-**Perhatian:** `TRANSACTION.from`, `TRANSACTION.to`, serta `JOURNAL_ENTRY.account` dapat menunjuk rekening nasabah ataupun akun sistem simulasi (`GL-CASH`, `GL-LOANFUND`), sehingga model nyata harus menormalkan akun GL sebagai entitas tersendiri. `settings` dan `counters` disimpan sebagai metadata dokumen JSON versi prototipe.
+## Node penting
+
+- `/milala_core_banking`: data bisnis lama (nasabah, rekening, transaksi, jurnal, kredit, cabang, staf, audit, settings, counters).
+- `/milala_secure/staffProfiles/{uid}`: pemetaan UID Firebase Auth ke ID staf dan role.
+- `/milala_secure/customerProfiles/{uid}`: pemetaan UID Firebase Auth ke ID nasabah.
+- `/milala_secure/pendingRegistrations/{uid}`: data registrasi sementara sebelum verifikasi email.
+
+Tidak ada password plaintext di Realtime Database setelah migrasi. Kredensial disimpan dan diverifikasi oleh Firebase Authentication. Custom Claims role hanya ditetapkan oleh Admin SDK.
+
+**Catatan:** `TRANSACTION.from`, `TRANSACTION.to`, dan `JOURNAL_ENTRY.account` dapat menunjuk rekening virtual ataupun akun sistem simulasi (`GL-CASH`, `GL-LOANFUND`). Ini tetap model ledger latihan, bukan general ledger bank produksi.

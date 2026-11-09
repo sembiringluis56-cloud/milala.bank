@@ -29,4 +29,4 @@ flowchart LR
     Auditor --> Login & Statement & Report & Audit
 ```
 
-Pembatasan hak akses ini hanya diproses di browser. Penyimpanan lokal tidak menyediakan keamanan untuk data bank nyata.
+Autentikasi menggunakan Firebase Authentication. Hak akses staf divalidasi server-side melalui Firebase Custom Claims dan Vercel Serverless Functions. Realtime Database Rules menolak seluruh akses langsung dari browser. Seluruh saldo dan transaksi tetap simulasi pendidikan.

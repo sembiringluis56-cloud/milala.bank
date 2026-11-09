@@ -1,31 +1,36 @@
-# Checklist Pengujian — MILALA BANK
+# Testing and validation status
 
-Pengujian dilakukan terhadap versi ini menggunakan syntax check Node.js dan interaksi Chromium/Playwright. Karena kebijakan lingkungan penguji memblokir navigasi browser ke `file://` maupun `http://127.0.0.1`, HTML/CSS/JS dimasukkan langsung ke halaman browser yang memiliki mock storage. Ini menguji perilaku UI/JavaScript, **bukan** seluruh mekanisme browser file lokal. Pengujian manual di komputer pengguna tetap dianjurkan.
+## Static checks included in this package
+- JSON syntax: `firebase.json`, `.firebaserc`, `database.rules.json`, `vercel.json`, and `package.json`.
+- JavaScript syntax: browser files, `lib/banking.js`, `api/[action].js`, and `scripts/migrate-staff.js`.
+- Frontend adapter uses same-origin `/api/{action}` calls and does not directly access RTDB.
+- API route verifies Firebase ID tokens and checks token revocation.
+- API action allowlist is checked.
+- Firebase Functions SDK is not used.
+- RTDB browser rules are default-deny.
 
-| Skenario | Status pengujian |
-|---|---|
-| Parse syntax 3 file JS | PASS — `node --check` |
-| Login akun demo Super Admin | PASS |
-| Membuka seluruh 15 menu | PASS |
-| Tambah nasabah fiktif | PASS |
-| Buka rekening nasabah | PASS |
-| Setor tunai | PASS |
-| Transfer internal | PASS |
-| Ajukan kredit | PASS |
-| Persetujuan / pencairan kredit | PASS |
-| Angsuran pokok | PASS |
-| Data tersimpan dalam storage | PASS |
-| Pembatasan menu Auditor | PASS |
-| Kesalahan runtime JavaScript pada alur di atas | Tidak ditemukan |
-| Restore file di browser lokal asli | BELUM DIUJI |
-| Penolakan tarik tunai melebihi saldo | PASS |
-| Konsistensi pasangan jurnal pada 118 transaksi awal | PASS (semua penjumlahan nol) |
-| Penolakan persetujuan kredit | PASS |
-| Pergantian tema gelap | PASS |
-| Tampilan mobile 375px dan navigasi hamburger | PASS (cek dasar, tidak ada overflow dokumen) |
-| Rekening diblokir | BELUM DIUJI dalam browser (aturan tersedia dalam kode) |
-| Pengujian lintas browser lain | BELUM DIUJI |
-| Transaksi simultan lintas tab / race condition | TIDAK DIDUKUNG |
-| Penetrasi keamanan / audit independen | TIDAK DILAKUKAN |
+Run:
 
-*Tidak ada klaim keamanan, kesesuaian regulasi, atau siap produksi.*
+```powershell
+npm install
+npm run check
+```
+
+## Not tested against live services in this session
+No deployment to the user's Vercel or Firebase project has been performed. The service-account secret is not available in this environment. A passing static check does not prove that Vercel environment variables, Auth provider, email verification, live database, and authorization workflows are correctly configured.
+
+## Live test checklist
+- [ ] `POST /api/getPublicInfo` returns 200 after deployment.
+- [ ] Protected API calls without Bearer token return 401.
+- [ ] Invalid or revoked Firebase ID token returns 401.
+- [ ] User without staff profile/claims cannot access staff snapshot.
+- [ ] Staff role restrictions work server-side.
+- [ ] Customer A cannot read Customer B data.
+- [ ] Customer cannot change account balance, transaction, journal, or loan status.
+- [ ] Customer can submit a loan only for an active account they own.
+- [ ] Transaction and journal validations reject tampered data.
+- [ ] Direct RTDB reads/writes from browser are denied after rules deployment.
+- [ ] Existing `/milala_core_banking` data remains intact.
+- [ ] Migration backup is stored outside GitHub and protected.
+
+Use only dummy accounts and simulated data. Do not test with real financial or identity data.

@@ -6,24 +6,24 @@ sequenceDiagram
     participant UI as Halaman Transfer
     participant App as Logika JavaScript
     participant Store as MBStore
-    participant LS as Browser LocalStorage
+    participant RTDB as Vercel API → Firebase Realtime Database
     Teller->>UI: Pilih sumber, tujuan, nominal
     UI->>App: Submit transaksi
     App->>App: Validasi role & input
     App->>Store: commit(mutator)
-    Store->>LS: Baca snapshot JSON
-    LS-->>Store: Objek state
+    Store->>RTDB: Baca snapshot node milala_core_banking
+    RTDB-->>Store: Objek state
     Store->>App: Jalankan mutator ke snapshot
     App->>App: Cek status & saldo
     App->>App: Buat transaksi + 2 entri jurnal
     App->>App: Catat audit log
     App-->>Store: Snapshot dimutasi
-    Store->>LS: SetItem(JSON state)
+    Store->>RTDB: set(JSON state)
     alt Penulisan berhasil
       Store-->>App: Snapshot terbaru
       App-->>UI: Render saldo dan notifikasi
     else Penulisan gagal
-      Store-->>App: Error storage
+      Store-->>App: Error Firebase
       App-->>UI: Tampilkan pesan kesalahan
     end
 ```

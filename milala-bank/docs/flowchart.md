@@ -15,7 +15,7 @@ flowchart TD
     F --> J[Pengajuan / persetujuan / angsuran kredit]
     F --> K[Mutasi / jurnal / laporan]
     F --> L[Backup / restore demo]
-    G --> M[Simpan data ke LocalStorage]
+    G --> M[Simpan data ke Vercel API → Firebase Realtime Database]
     H --> M
     I --> N[Validasi saldo dan buat jurnal berpasangan]
     J --> N

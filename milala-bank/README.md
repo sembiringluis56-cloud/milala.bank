@@ -1,160 +1,78 @@
-# MILALA BANK — Core Banking System (Simulasi)
+# MILALA BANK — Firebase Spark + Vercel Functions
 
-**Versi prototipe frontend offline: HTML5, CSS3, JavaScript ES6+ (tanpa framework, server, database, atau dependensi eksternal).**
+**MILALA BANK is an educational banking simulation.** Account balances, transfers, statements, and loans are virtual only. Do not use real money, real identity documents, or real bank-account data.
 
-> **PENTING: MILALA BANK ADALAH SISTEM DEMO FIKTIF, BUKAN BANK NYATA.** Seluruh nomor rekening, KYC, transaksi dan nominal uang hanya data latihan. **Jangan masukkan NIK, nomor rekening asli, password asli, dokumen nasabah, ataupun data sensitif.** Tidak ada transfer uang, pembukaan rekening sebenarnya, autentikasi aman, enkripsi di server, sistem antifraud, dan kepatuhan bank. Jangan gunakan untuk operasi perbankan nyata.
+This release uses:
+- Firebase Authentication (Email/Password) for user identity.
+- Firebase Realtime Database at the existing project and path.
+- Vercel Node.js Serverless Functions for trusted backend endpoints.
+- Firebase Admin SDK on Vercel to verify Firebase ID tokens and access the database.
+- Default-deny Realtime Database Security Rules for browser clients.
 
-## 1. Cara menjalankan
+## Existing Firebase project — retained
 
-1. Ekstrak file `MILALA_BANK_Core_Banking_System.zip`.
-2. Buka folder `milala-bank/`.
-3. **Buka `index.html` melalui browser modern** (Chrome/Edge/Firefox) dengan klik dua kali.
-4. Login dengan salah satu akun demo di bawah.
-5. Semua perubahan data demo tersimpan lokal di browser melalui `localStorage`. Sesi login berlaku sepanjang tab browser masih menggunakan `sessionStorage`.
-6. Jika browser memblokir penyimpanan untuk halaman file lokal, buka lewat server statis lokal pilihan Anda; tidak diperlukan aplikasi backend.
+- Project ID: `luis-sistem-informasi`
+- Project number: `592130766717`
+- Realtime Database URL: `https://luis-sistem-informasi-default-rtdb.asia-southeast1.firebasedatabase.app`
+- Existing business-data root: `/milala_core_banking`
+- Server-only access profiles: `/milala_secure`
 
-Sistem menggunakan file skrip klasik dengan `defer`, sehingga **tidak membutuhkan ES module import, npm, package manager, backend, atau jaringan internet**.
+**The application does not create a new Firebase project or database.** The existing `/milala_core_banking` node is read and updated in place by the server API. Do not reset, reseed, delete, or replace it.
 
-## 2. Akun demo
+## Why this works on Firebase Spark
 
-| Role | Email | Password | Keterangan |
-|---|---|---|---|
-| Super Admin | admin@milala.demo | Admin123! | Semua fitur |
-| Customer Service | cs@milala.demo | Cs12345! | Nasabah, rekening, pengajuan kredit |
-| Teller | teller@milala.demo | Teller123! | Setor/tarik, transfer, angsuran |
-| Branch Manager | manager@milala.demo | Manager123! | Persetujuan kredit dan laporan |
-| Auditor | auditor@milala.demo | Auditor123! | Laporan, buku jurnal, log (baca saja) |
+Firebase Spark includes Firebase Authentication's common email/password sign-in and a no-cost Realtime Database quota. Cloud Functions for Firebase are not available on Spark, so this project runs the backend as Vercel Functions instead. Firebase product quotas still apply, and Vercel usage limits also apply.
 
-Akun/password demo disimpan di LocalStorage dalam bentuk plaintext; **hanya cocok untuk simulasi**.
+## Project structure
 
-## 3. Modul yang disediakan
+- `index.html`, `assets/`: public website and customer/staff interface.
+- `assets/js/store.js`: calls same-origin `/api/{action}` routes; it does not read or write RTDB directly.
+- `api/[action].js`: Vercel HTTP API router; verifies Firebase ID tokens before protected operations.
+- `lib/banking.js`: trusted business logic, Firebase Admin SDK, server-side role checks, ledger validation.
+- `scripts/migrate-staff.js`: one-time local migration of legacy staff accounts.
+- `database.rules.json`: default-deny rules for direct browser access.
+- `firebase.json`: deploys only the Realtime Database rules through Firebase CLI.
 
-1. **Login, Logout, Profil** — autentikasi dan pengubahan password lokal untuk demo.
-2. **Dashboard** — jumlah nasabah, agregat saldo, rekening aktif, kredit berjalan, grafik, transaksi terakhir dan aksi cepat.
-3. **Manajemen Nasabah** — tambah, detail, edit, nonaktif, filter dan cari. ID KYC selalu dummy.
-4. **Manajemen Rekening** — pembukaan nomor virtual unik `ML-*`, jenis tabungan/giro/deposito, lihat saldo/detail, blokir dan tutup (saldo harus nol).
-5. **Setor & Tarik Tunai** — cek nominal dan status rekening, pencatatan kas demo dan journal entries.
-6. **Transfer Internal** — pindah buku antar-rekening virtual bank yang sama, pemeriksaan saldo, pencatatan referensi.
-7. **Mutasi & Rekening Koran** — debit/kredit, saldo berjalan, filter periode, ekspor CSV, cetak.
-8. **Manajemen Kredit** — pengajuan, riwayat, outstanding pokok, dan angsuran pokok.
-9. **Persetujuan Kredit** — setuju + pencairan ke rekening simulasi, atau tolak.
-10. **Laporan** — laporan nasabah, rekening, transaksi dan kredit; filter tanggal/cabang; CSV, JSON dan cetak.
-11. **Jurnal** — model debit/kredit berpasangan dengan pengecekan kesetimbangan per transaksi.
-12. **Audit Log** — aktivitas login, mutasi data, transaksi, approval dan perubahan password demo.
-13. **Cabang** — daftar cabang, tambah dan edit oleh Super Admin.
-14. **Manajemen Pengguna** — tambah dan edit user demo, pengubahan role, penonaktifan.
-15. **Pengaturan** — nama bank, tema gelap/terang, backup, restore, dan reset data simulasi.
+## Security model
 
-Tampilan responsif untuk desktop, tablet, dan perangkat seluler. Tidak ada tombol utama yang sengaja dibiarkan tanpa aksi.
+- The browser uses Firebase Authentication only.
+- For protected API calls, the browser sends its Firebase ID token as a Bearer token.
+- The Vercel API verifies the ID token (including revocation check) with Firebase Admin SDK.
+- Staff role claims and customer profile mappings are checked server-side.
+- The Vercel backend uses a service account stored only as a Vercel environment variable.
+- The Admin SDK has privileged access and bypasses Realtime Database Rules. The API therefore must keep its allowlisted routes, verify tokens, and enforce authorization on every protected action.
+- Browser clients are denied direct RTDB read/write by `database.rules.json`.
 
-## 4. Alur bisnis
+## First-time setup
 
-### A. Rekening & transaksi
+Read [`docs/FIREBASE_SETUP.md`](docs/FIREBASE_SETUP.md) and follow its order. Do not deploy default-deny rules until the Vercel API is configured and the backend has been tested.
 
-```text
-Registrasi Nasabah -> Buka Rekening (Saldo 0) -> Setor Tunai ->
-Transfer Internal / Tarik Tunai -> Mutasi Rekening -> Laporan
+## Local validation
+
+Install Node.js 22 LTS, then from the project root:
+
+```powershell
+npm install
+npm run check
 ```
 
-Setiap transaksi menciptakan satu objek `transactions` dan dua entri dalam `journal` (sumber bernilai negatif, tujuan positif), kemudian seluruh perubahan dipersiapkan sebelum ditulis sebagai **satu dokumen JSON LocalStorage**. Model ini hanya simulasi dan tidak memiliki jaminan atomisitas, isolasi, konsistensi lintas tab, atau durability seperti database produksi.
+Do not run `npm --prefix functions install` or `firebase deploy --only functions`; this Spark release has no Firebase Cloud Functions.
 
-### B. Kredit
+## Vercel environment variables
 
-```text
-Ajukan Kredit -> Menunggu Persetujuan -> Disetujui/Ditolak
-                                         |
-                                         v
-                                  Pencairan Kredit
-                                         |
-                                         v
-                                  Angsuran Pokok
-                                         |
-                                         v
-                                      Lunas
-```
+Set these in Vercel → Project → Settings → Environment Variables:
 
-**Perhitungan kredit adalah contoh yang disederhanakan:** suku bunga tahunan hanya metadata dan *tidak* dihitung pada angsuran. Tidak ada bunga efektif, bunga berjalan, denda, provisi, jadwal amortisasi, penilaian kredit, pencadangan, NPL, maupun laporan regulator.
+- `FIREBASE_PROJECT_ID` = `luis-sistem-informasi`
+- `FIREBASE_DATABASE_URL` = `https://luis-sistem-informasi-default-rtdb.asia-southeast1.firebasedatabase.app`
+- `FIREBASE_SERVICE_ACCOUNT_JSON` = complete Firebase service-account JSON, stored as a server-only secret
+- `APP_ORIGIN` = exact production website origin, e.g. `https://your-domain.vercel.app`
 
-### C. Pembatasan data
+Never use a `NEXT_PUBLIC_` or `VITE_` prefix for service-account values. Never commit a service-account JSON file, paste it into frontend code, or send it in chat.
 
-- Nominal rupiah selalu bilangan bulat positif, maksimal Rp10 miliar per transaksi demo.
-- Transaksi keluar ditolak bila saldo tidak cukup.
-- Transfer ditolak bila rekening sumber dan tujuan sama.
-- Rekening nonaktif/blokir tidak dapat bertransaksi.
-- Nomor rekening virtual tidak boleh duplikat.
-- Rekening tidak dapat ditutup dengan saldo bukan nol.
-- Nasabah dengan rekening aktif tidak dapat dinonaktifkan.
-- Kredit hanya dapat dicairkan melalui persetujuan role Admin/Manager.
-- Pengajuan kredit ditolak tidak dapat dicairkan.
-- Role dibatasi pada UI dan aksi JavaScript, **bukan otorisasi aman**.
-- Data nasabah, cabang, rekening dan riwayat tidak dihapus permanen melalui UI; penonaktifan dan blokir mempertahankan relasi audit.
+## Staff and customer account migration
 
-## 5. Struktur file
+Legacy staff records are migrated using `scripts/migrate-staff.js`. Run a dry-run first, inspect its local backup, then apply only after checking the accounts. This script uses the same service account locally via `GOOGLE_APPLICATION_CREDENTIALS`. Legacy customer portal accounts are not automatically linked; do not link an old customer solely based on a browser-supplied email.
 
-```text
-milala-bank/
-├── index.html
-├── README.md
-├── assets/
-│   ├── css/
-│   │   └── style.css        # Responsive design, login, dashboard, forms, print
-│   └── js/
-│       ├── seed.js          # Data fiktif awal dan akun demo
-│       ├── store.js         # Akses LocalStorage, validasi backup, saldo jurnal
-│       └── app.js           # UI SPA, role, CRUD, transaksi, kredit, laporan
-└── docs/
-    ├── ERD.md
-    ├── use-case.md
-    ├── activity-diagram.md
-    ├── sequence-diagram.md
-    ├── class-diagram.md
-    ├── flowchart.md
-    └── TESTING.md
-```
+## Important limitations
 
-Diagram menggunakan Mermaid; tampilkan di GitHub atau editor Markdown yang mendukung Mermaid.
-
-## 6. Penyimpanan data
-
-Data disimpan dalam satu root object di `localStorage` dengan key `milala_core_banking_demo_v1`:
-
-- `users`, `branches`, `customers`, `accounts`
-- `transactions`, `journal`, `loans`, `audit`
-- `settings`, `counters`, `version`
-
-Saldo rekening **dihitung** dari jumlah `journal.delta`, bukan disimpan sebagai nilai saldo yang diedit bebas. Entri pertama dalam demo berasal dari sumber simulasi `GL-CASH`. Pencairan kredit menggunakan `GL-LOANFUND` sebagai akun sumber fiktif. Nilai `debit(-)` dan `kredit(+)` di UI adalah perubahan saldo simulasi, bukan definisi debit/kredit akuntansi neraca bank.
-
-### Backup / Restore
-
-1. Masuk sebagai **Super Admin**.
-2. Buka menu **Pengaturan Sistem**.
-3. Klik **Backup JSON** untuk mengunduh seluruh data demo.
-4. Untuk memulihkan, pilih **Restore JSON**, pilih file `.json`, lalu konfirmasi.
-5. Restore memeriksa struktur pokok, jumlah jurnal per referensi harus nol, nilai numerik dan keunikan nomor rekening. **Validasi ini tidak memadai untuk file tak tepercaya atau produksi.**
-6. Klik **Reset Data Demo** untuk kembali ke data fiktif bawaan.
-
-Backup dapat memuat seluruh akun demo beserta passwordnya; simpan hanya untuk latihan.
-
-## 7. Data awal
-
-- 5 pengguna demo dengan 5 role berbeda.
-- 3 cabang fiktif.
-- 20 nasabah fiktif.
-- 26 rekening virtual.
-- Lebih dari 100 transaksi dan dua entri jurnal tiap transaksi.
-- 10 data kredit (status pending, approved, lunas, ditolak).
-- Log aktivitas contoh.
-
-## 8. Pengujian yang dilakukan
-
-- Sintaks tiga file JavaScript diuji dengan `node --check`.
-- Antarmuka diuji melalui Chromium + Playwright dengan file HTML/CSS/JS dimasukkan ke halaman pengujian yang memiliki simulasi storage lokal (akses ke URL `file://` dan `localhost` dari penguji diblokir oleh kebijakan lingkungan).
-- Alur diuji: login, tambah nasabah, pembukaan rekening, setoran, transfer, pengajuan kredit, approval, angsuran, navigasi 15 menu, persistensi data pada storage, pembatasan menu role Auditor, penolakan overdraft, pengecekan kesetimbangan jurnal awal, penolakan kredit, pergantian tema dan tampilan mobile 375px.
-- Tidak ditemukan error JavaScript selama alur yang diuji. Rincian dan batasan dicatat di `docs/TESTING.md`.
-- **Belum dilakukan** pengujian lintas browser, penetrasi keamanan, stress/load, konkurensi lintas tab, maupun validasi transaksi ke bank sungguhan.
-
-## 9. Pengembangan lanjutan yang diperlukan untuk core banking nyata
-
-Arsitektur aplikasi ini **tidak** bisa digunakan untuk transaksi uang sesungguhnya. Produk bank nyata memerlukan backend terisolasi, database ACID, account ledger sesuai standar, audit log immutable, kontrol akses server-side, autentikasi dan MFA, enkripsi, key management, maker-checker, antifraud, pemantauan transaksi, KYC/AML sesuai hukum yang berlaku, disaster recovery, pengujian keamanan independen, integrasi pembayaran resmi, sistem monitoring, kebijakan privasi, dan penilaian regulator. Jangan mencoba menghubungkan prototipe ini dengan rekening atau layanan bank nyata.
-
-**MILALA BANK — Banking operations reimagined. (Demo pendidikan)**
+This is not a real bank or production financial core. It is an educational simulation. It has not been deployed to your Vercel account or tested against your live Firebase project in this session. Before public launch, complete the test checklist, add rate limiting/App Check where appropriate, review cross-branch data scope, and arrange an independent security review.
