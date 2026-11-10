@@ -101,7 +101,17 @@ module.exports = async function handler(req, res) {
     const result = await banking[action]({ auth, data });
     return res.status(200).json(result === undefined ? { ok: true } : result);
   } catch (error) {
-    const code = String(error?.code || 'internal').replace(/^functions\//, '');
+
+  console.error('[MILALA API ERROR]', {
+    action,
+    code: String(error?.code || 'internal'),
+    name: String(error?.name || 'Error'),
+    message: String(
+      error?.message || 'Unknown error'
+    ).slice(0, 400)
+  });
+
+  const code = String(error?.code || 'internal').replace(/^functions\//, '');
     const status = STATUS[code] || 500;
     const message = status >= 500 ? 'Terjadi kesalahan pada server. Coba lagi nanti.' : (error.message || 'Permintaan tidak dapat diproses.');
     return sendError(res, status, code, message);
