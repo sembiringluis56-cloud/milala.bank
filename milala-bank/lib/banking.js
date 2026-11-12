@@ -523,7 +523,10 @@ exports.applyCustomerLoan = onCall(async (request) => {
   if (!Number.isSafeInteger(principal) || principal < 100000 || principal > 1000000000) fail('invalid-argument', 'Nominal pengajuan harus Rp100 ribu sampai Rp1 miliar.');
   if (![6, 12, 18, 24, 36, 48, 60].includes(term)) fail('invalid-argument', 'Tenor tidak valid.');
   let loanId = null;
-  const result = await rootRef().transaction((current) => {
+  // Prime the RTDB transaction cache before starting. Firebase Admin may call a
+  // transaction updater with null on a cold serverless instance even when the
+  // remote root exists, and returning undefined here aborts a valid loan.
+  const result = await withLiveRoot((ref) => ref.transaction((current) => {
     if (!current) return;
     const state = normalizeState(current);
     const owned = state.accounts.find((a) => a.id === accountId && a.customerId === customer.customerId && a.status === 'Aktif');
@@ -539,7 +542,7 @@ exports.applyCustomerLoan = onCall(async (request) => {
     state.counters.log = logSeq + 1;
     state.revision = Number(state.revision || 0) + 1;
     return state;
-  }, undefined, false);
+  }, undefined, false));
   if (!result.committed || !loanId) fail('failed-precondition', 'Rekening tidak aktif, bukan milik akun ini, atau data berubah.');
   const latest = normalizeState(result.snapshot.val());
   return { loanId, ...customerSnapshot(latest, customer.customerId, customer.uid, customer.email) };
@@ -552,15 +555,22 @@ exports.commitStaffSnapshot = onCall(async (request) => {
   if (!isObj(incoming) || !Number.isSafeInteger(expectedRevision) || expectedRevision < 0) fail('invalid-argument', 'Permintaan perubahan data tidak valid.');
   if (JSON.stringify(incoming).length > 2_000_000) fail('resource-exhausted', 'Snapshot terlalu besar untuk disimpan.');
   let validationError = null;
-  const result = await rootRef().transaction((current) => {
+  // A live value listener warms the transaction cache before its first update.
+  // Without this, a cold-cache null is falsely reported as an empty database.
+  const result = await withLiveRoot((ref) => ref.transaction((current) => {
+    // The updater can run again after conflicts; only the latest attempt's
+    // validation result matters. A successful retry must not throw a stale error.
+    validationError = null;
     if (!current) { validationError = new HttpsError('failed-precondition', 'Database MILALA BANK kosong.'); return; }
     const oldState = normalizeState(current);
     if (Number(oldState.revision || 0) !== expectedRevision) { validationError = new HttpsError('aborted', 'Data baru saja berubah dari sesi lain. Muat ulang halaman lalu coba kembali.'); return; }
     try { return validateStaffMutation(oldState, incoming, staff); }
     catch (error) { validationError = error instanceof HttpsError ? error : new HttpsError('invalid-argument', error.message || 'Perubahan data tidak valid.'); return; }
-  }, undefined, false);
-  if (validationError) throw validationError;
-  if (!result.committed) fail('aborted', 'Data tidak tersimpan karena konflik perubahan. Muat ulang halaman.');
+  }, undefined, false));
+  if (!result.committed) {
+    if (validationError) throw validationError;
+    fail('aborted', 'Data tidak tersimpan karena konflik perubahan. Muat ulang halaman.');
+  }
   return { state: normalizeState(result.snapshot.val()) };
 });
 
