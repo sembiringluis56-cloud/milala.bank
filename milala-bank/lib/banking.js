@@ -1187,13 +1187,31 @@ exports.saveFinanceWorkspace = onCall(async (request) => {
   if (!Number.isSafeInteger(expected) || expected < 0) fail('invalid-argument', 'Revisi tidak valid.');
   const clean = validatedFinance(request.data?.workspace);
   const ref = secureRef().child('financeWorkspaces').child(uid);
-  const result = await ref.transaction((current) => {
-    const revision = Number(current?.revision || 0);
-    if (revision !== expected) return;
-    return { ...clean, revision: revision + 1, updatedAt: nowIso() };
-  }, undefined, false);
-  if (!result.committed) fail('aborted', 'Data berubah di perangkat lain. Muat ulang fitur lalu coba lagi.');
-  return { workspace: { ...EMPTY_FINANCE(), ...result.snapshot.val() } };
+  const conflictMessage = 'Data berubah di perangkat lain. Muat ulang fitur lalu coba lagi.';
+  let listener;
+  try {
+    // RTDB Node Admin transactions can invoke their updater with a cold-cache
+    // `null` even when the remote node exists. Returning undefined on that
+    // first invocation mistakenly aborts EVERY subsequent save (revision > 0).
+    // A live value listener ensures the initial server state is present in the
+    // local transaction cache. Keep it attached through the commit/retry so
+    // the real revision check remains atomic and prevents lost updates.
+    const initial = await new Promise((resolve, reject) => {
+      listener = (snapshot) => resolve(snapshot.val());
+      ref.on('value', listener, reject);
+    });
+    if (Number(initial?.revision || 0) !== expected) fail('aborted', conflictMessage);
+
+    const result = await ref.transaction((current) => {
+      const revision = Number(current?.revision || 0);
+      if (revision !== expected) return;
+      return { ...clean, revision: revision + 1, updatedAt: nowIso() };
+    }, undefined, false);
+    if (!result.committed) fail('aborted', conflictMessage);
+    return { workspace: { ...EMPTY_FINANCE(), ...result.snapshot.val() } };
+  } finally {
+    if (listener) ref.off('value', listener);
+  }
 });
 exports.submitFeedback = onCall(async (request) => {
   const data = request.data || {};

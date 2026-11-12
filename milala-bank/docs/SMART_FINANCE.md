@@ -49,6 +49,13 @@ Paket ini menambahkan **11 menu** (10 modul referensi + Feedback) ke **Portal Na
 
 Semua endpoint baru ditambahkan ke router API yang sudah ada dan meniru pola error yang sama. Tidak ada endpoint lama yang dihapus.
 
+## Hotfix: konflik palsu saat menyimpan data (12 November 2026)
+
+- Bila setelah menambahkan anggota keluarga penyimpanan anggaran menampilkan `Data berubah di perangkat lain`, penyebabnya dapat berupa transaksi Firebase yang dimulai dengan cache `null`, bukan perubahan dari pengguna lain.
+- Versi hotfix ini memasang listener sementara pada workspace milik UID sebelum melakukan transaksi, lalu menutupnya setelah commit. Pengecekan `revision` tetap dilakukan di dalam transaksi agar perubahan serentak tetap ditolak.
+- **Cukup deploy `lib/banking.js`** dari hotfix ini ke project yang sedang aktif; tidak perlu menghapus anggota keluarga atau mengosongkan Firebase.
+- Uji: simpan anggota keluarga, lalu tambah/edit anggaran, tutup/buka halaman, dan pastikan revisinya bertambah. Uji dengan dua sesi untuk memastikan revisi lama tetap ditolak.
+
 ## Troubleshooting
 
 - Jika halaman awal menulis **Backend Vercel belum siap**, periksa environment variables dan status fungsi Vercel/API lama terlebih dahulu.
