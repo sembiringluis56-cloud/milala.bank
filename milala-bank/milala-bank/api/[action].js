@@ -3,7 +3,7 @@
 const { getAuth } = require('firebase-admin/auth');
 const banking = require('../lib/banking');
 
-const PUBLIC_ACTIONS = new Set(['getPublicInfo']);
+const PUBLIC_ACTIONS = new Set(['getPublicInfo', 'submitFeedback']);
 const ACTIONS = new Set([
   'getPublicInfo',
   'getUserContext',
@@ -13,7 +13,11 @@ const ACTIONS = new Set([
   'getCustomerPortalData',
   'applyCustomerLoan',
   'commitStaffSnapshot',
-  'manageStaffAccount'
+  'manageStaffAccount',
+  'getFinanceWorkspace',
+  'saveFinanceWorkspace',
+  'submitFeedback',
+  'getFeedback'
 ]);
 
 const STATUS = {
@@ -98,10 +102,20 @@ module.exports = async function handler(req, res) {
   }
 
   try {
-    const result = await banking[action]({ auth, data });
+    const result = await banking[action]({ auth, data, meta: { ip: String(req.headers['x-forwarded-for'] || req.socket?.remoteAddress || '').split(',')[0].trim().slice(0, 100) } });
     return res.status(200).json(result === undefined ? { ok: true } : result);
   } catch (error) {
-    const code = String(error?.code || 'internal').replace(/^functions\//, '');
+
+  console.error('[MILALA API ERROR]', {
+    action,
+    code: String(error?.code || 'internal'),
+    name: String(error?.name || 'Error'),
+    message: String(
+      error?.message || 'Unknown error'
+    ).slice(0, 400)
+  });
+
+  const code = String(error?.code || 'internal').replace(/^functions\//, '');
     const status = STATUS[code] || 500;
     const message = status >= 500 ? 'Terjadi kesalahan pada server. Coba lagi nanti.' : (error.message || 'Permintaan tidak dapat diproses.');
     return sendError(res, status, code, message);

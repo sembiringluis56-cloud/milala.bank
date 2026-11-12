@@ -119,6 +119,14 @@ window.MBStore = (() => {
     return read();
   }
 
+  // Smart Finance is stored in an isolated per-UID path, never in the core banking ledger.
+  async function getFinanceWorkspace() { return call('getFinanceWorkspace'); }
+  async function saveFinanceWorkspace(workspace, expectedRevision) {
+    return call('saveFinanceWorkspace', { workspace, expectedRevision });
+  }
+  async function submitFeedback(payload) { return call('submitFeedback', payload); }
+  async function getFeedback() { return call('getFeedback'); }
+
   async function registerCustomer(email, password, profile) {
     ensureReady();
     const credential = await auth.createUserWithEmailAndPassword(String(email).trim().toLowerCase(), password);
@@ -202,6 +210,7 @@ window.MBStore = (() => {
   return {
     init, loadPublicInfo, getUserContext, loadStaffSnapshot, loadCustomerSnapshot,
     read, commit, manageStaffAccount, applyCustomerLoan,
+    getFinanceWorkspace, saveFinanceWorkspace, submitFeedback, getFeedback,
     registerCustomer, signIn, signOut, completeCustomerRegistration, resendVerification,
     sendPasswordReset, changePassword, onAuthStateChanged, currentUser, balance
   };

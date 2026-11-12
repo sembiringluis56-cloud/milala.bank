@@ -7,7 +7,7 @@
     "node": "22.x"
   },
   "scripts": {
-    "check": "node scripts/validate-package.js"
+    "check": "node scripts/validate-package.js && node scripts/test-smart-finance.js && node scripts/test-smart-finance-ui.js"
   },
   "dependencies": {
     "firebase-admin": "^13.5.0"

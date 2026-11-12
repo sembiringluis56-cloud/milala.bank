@@ -1114,3 +1114,115 @@ rollbackState.audit = rollbackAudit.filter(
     fail('internal', 'Gagal menyimpan akun staf.');
   }
 });
+
+// ---------------------------------------------------------------------------
+// Optional Smart Finance modules, isolated from the original bank ledger.
+// Each workspace is owned by the authenticated Firebase UID; requests can never
+// select someone else's UID. These records are simulated manual entries only.
+// ---------------------------------------------------------------------------
+const { createHash, randomUUID: newUUID } = require('node:crypto');
+const FINANCE_FIELDS = Object.freeze({
+  banks: 50, goals: 100, invoices: 150, entries: 500, familyMembers: 30, familyBudgets: 60
+});
+const FINANCE_TEXT_FIELDS = Object.freeze({
+  banks: ['name', 'bank', 'type', 'note'],
+  goals: ['name', 'note'],
+  invoices: ['title', 'party', 'type', 'status', 'note'],
+  entries: ['title', 'category', 'type', 'scope', 'note'],
+  familyMembers: ['name', 'role'],
+  familyBudgets: ['category', 'note']
+});
+const EMPTY_FINANCE = () => ({ version: 1, revision: 0, banks: [], goals: [], invoices: [], entries: [], familyMembers: [], familyBudgets: [] });
+
+async function financeOwner(request) {
+  const token = assertAuth(request).token || {};
+  if (token.staff === true) { await assertStaff(request); }
+  else { await assertCustomer(request); }
+  return request.auth.uid;
+}
+function validatedFinance(data) {
+  if (!isObj(data)) fail('invalid-argument', 'Format workspace tidak valid.');
+  const result = EMPTY_FINANCE();
+  const allIds = new Set();
+  for (const [field, limit] of Object.entries(FINANCE_FIELDS)) {
+    const items = data[field];
+    if (!Array.isArray(items) || items.length > limit) fail('invalid-argument', `Jumlah ${field} tidak valid (maks. ${limit}).`);
+    result[field] = items.map((item) => {
+      if (!isObj(item) || typeof item.id !== 'string' || !/^[a-zA-Z0-9_-]{5,80}$/.test(item.id) || allIds.has(item.id)) {
+        fail('invalid-argument', 'ID item tidak valid atau duplikat.');
+      }
+      allIds.add(item.id);
+      const clean = { id: item.id };
+      for (const name of FINANCE_TEXT_FIELDS[field]) {
+        const raw = item[name] == null ? '' : item[name];
+        if (typeof raw !== 'string' || raw.length > (name === 'note' ? 500 : 120)) fail('invalid-argument', `Kolom ${name} tidak valid.`);
+        clean[name] = raw.trim();
+      }
+      const numNames = field === 'banks' ? ['balance'] : field === 'goals' ? ['target', 'saved'] : field === 'invoices' ? ['amount'] : field === 'entries' ? ['amount'] : field === 'familyBudgets' ? ['limit', 'used'] : [];
+      for (const name of numNames) {
+        if (typeof item[name] !== 'number' || !Number.isSafeInteger(item[name]) || item[name] < 0 || item[name] > 10000000000) fail('invalid-argument', `Nominal ${name} tidak valid.`);
+        clean[name] = item[name];
+      }
+      for (const name of ['date', 'due', 'createdAt']) {
+        if (item[name] != null) {
+          if (typeof item[name] !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(item[name]) || Number.isNaN(Date.parse(item[name] + 'T00:00:00Z'))) fail('invalid-argument', 'Tanggal harus YYYY-MM-DD.');
+          clean[name] = item[name];
+        }
+      }
+      return clean;
+    });
+  }
+  return result;
+}
+exports.getFinanceWorkspace = onCall(async (request) => {
+  const uid = await financeOwner(request);
+  const snap = await secureRef().child('financeWorkspaces').child(uid).get();
+  const existing = snap.val();
+  if (!existing) return { workspace: EMPTY_FINANCE() };
+  return { workspace: { ...EMPTY_FINANCE(), ...existing } };
+});
+exports.saveFinanceWorkspace = onCall(async (request) => {
+  const uid = await financeOwner(request);
+  const expected = Number(request.data?.expectedRevision);
+  if (!Number.isSafeInteger(expected) || expected < 0) fail('invalid-argument', 'Revisi tidak valid.');
+  const clean = validatedFinance(request.data?.workspace);
+  const ref = secureRef().child('financeWorkspaces').child(uid);
+  const result = await ref.transaction((current) => {
+    const revision = Number(current?.revision || 0);
+    if (revision !== expected) return;
+    return { ...clean, revision: revision + 1, updatedAt: nowIso() };
+  }, undefined, false);
+  if (!result.committed) fail('aborted', 'Data berubah di perangkat lain. Muat ulang fitur lalu coba lagi.');
+  return { workspace: { ...EMPTY_FINANCE(), ...result.snapshot.val() } };
+});
+exports.submitFeedback = onCall(async (request) => {
+  const data = request.data || {};
+  if (String(data.website || '') !== '') return { ok: true }; // honeypot
+  const type = String(data.type || 'saran');
+  const message = String(data.message || '').trim();
+  const name = String(data.name || '').trim();
+  const email = String(data.email || '').trim().toLowerCase();
+  if (!['saran', 'bug', 'pujian'].includes(type) || message.length < 10 || message.length > 1500 || name.length > 80 || email.length > 120 || (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))) fail('invalid-argument', 'Data feedback belum lengkap atau tidak valid.');
+  // Use a hashed IP key for coarse server-side throttle; do not retain plain IP.
+  const visitor = String(request.auth?.uid || request.meta?.ip || 'unknown');
+  const key = createHash('sha256').update(PROJECT_ID + '|feedback|' + visitor).digest('hex');
+  const cooldownRef = secureRef().child('feedbackCooldown').child(key);
+  const ts = Date.now();
+  const gate = await cooldownRef.transaction((old) => {
+    if (typeof old === 'number' && ts - old < 60000) return;
+    return ts;
+  }, undefined, false);
+  if (!gate.committed) fail('resource-exhausted', 'Tunggu sekitar satu menit sebelum mengirim feedback lagi.');
+  await secureRef().child('feedback').push({ type, message, name, email, createdAt: nowIso(), status: 'baru', submittedBy: request.auth?.uid || null });
+  return { ok: true };
+});
+exports.getFeedback = onCall(async (request) => {
+  await assertStaff(request, ['admin', 'manager']);
+  const snap = await secureRef().child('feedback').orderByKey().limitToLast(100).get();
+  const results = [];
+  snap.forEach((child) => {
+    const f = child.val();
+    if (isObj(f)) results.push({ id: child.key, type: String(f.type || ''), name: String(f.name || ''), email: String(f.email || ''), message: String(f.message || ''), createdAt: String(f.createdAt || '') });
+  });
+  return { items: results.reverse() };
+});

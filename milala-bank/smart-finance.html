@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#071831">
+  <meta name="description" content="MILALA Smart Finance Lite: kalkulator anggaran, analisis pengeluaran, target tabungan, dana darurat, dan edukasi keamanan. Simulasi edukasi tanpa akses rekening.">
+  <title>Smart Finance Lite | MILALA BANK</title>
+  <style>
+    :root{color-scheme:light;--navy:#071831;--blue:#155fda;--blue2:#0e7ad9;--cyan:#74e2e9;--ink:#102342;--muted:#60718c;--line:#dfebf5;--pale:#f4f8fe;--white:#fff;--green:#087758;--amber:#9c5300;--red:#a32635}
+    *,*::before,*::after{box-sizing:border-box}
+    html{scroll-behavior:smooth}body{margin:0;font:16px/1.6 system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--ink);background:#f3f7fc}
+    button,input{font:inherit}button{cursor:pointer}button:focus-visible,a:focus-visible,input:focus-visible{outline:3px solid #76dbea;outline-offset:3px}
+    .wrap{width:min(1120px,calc(100% - 32px));margin:auto}
+    .top{background:#fff;border-bottom:1px solid var(--line)}.topin{min-height:70px;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+    .brand{font-weight:900;letter-spacing:.08em;text-decoration:none;color:#09224d;display:flex;align-items:center;gap:10px}.brandicon{background:linear-gradient(140deg,#24c2dc,#1262d6);color:white;border-radius:14px;padding:6px 11px;font-size:24px}
+    .back{font-size:14px;color:#1359ad;text-decoration:none;font-weight:700}.back:hover{text-decoration:underline}
+    .hero{background:radial-gradient(circle at 82% 28%,#194d86 0%,transparent 44%),linear-gradient(120deg,#071831,#092957 65%,#113f76);padding:60px 0 58px;color:white}
+    .eyebrow{color:#7ce4ef;font-weight:800;letter-spacing:.16em;text-transform:uppercase;font-size:12px}.hero h1{font-size:clamp(32px,6vw,61px);line-height:1.12;letter-spacing:-.04em;max-width:690px;margin:12px 0 16px}.hero h1 span{color:var(--cyan)}
+    .hero p{color:#cedff5;max-width:730px;margin:0 0 25px}.tag{display:inline-block;border:1px solid #5682b0;padding:6px 12px;border-radius:999px;color:#d8ecff;font-size:13px}
+    main{padding:34px 0 60px}.sectionhead{margin:8px 0 18px}.sectionhead h2{font-size:clamp(24px,4vw,32px);letter-spacing:-.03em;margin:0 0 4px}.sectionhead p{margin:0;color:var(--muted)}
+    .menu{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;margin-bottom:32px}.menulink{border:1px solid var(--line);background:white;border-radius:17px;padding:18px 15px;text-align:left;min-height:112px;color:var(--ink);text-decoration:none;display:flex;flex-direction:column;justify-content:space-between;gap:12px;box-shadow:0 5px 24px #14345b09;transition:transform .15s,border-color .15s}
+    .menulink:hover{transform:translateY(-2px);border-color:#8abaff}.menuicon{font-size:23px}.menulink strong{font-size:14px;line-height:1.35}.menulink small{font-size:11px;color:#1960be;font-weight:700}.menulink.soon{background:#eef2f7;color:#778497;cursor:default;box-shadow:none}.menulink.soon small{color:#718098}
+    .panel{background:#fff;border:1px solid var(--line);border-radius:22px;box-shadow:0 9px 30px #1f3f6510;margin-bottom:24px;padding:28px;scroll-margin-top:20px}.panel h2{margin:0 0 4px;font-size:25px;letter-spacing:-.025em}.intro{color:var(--muted);margin:0 0 24px;font-size:14px}
+    .formgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}.field label{font-size:13px;font-weight:700;display:block;margin-bottom:6px}.field input{width:100%;border:1px solid #cfddeb;border-radius:11px;background:white;padding:12px 13px;color:var(--ink);min-width:0}.field input:focus{border-color:var(--blue)}.field .hint{display:block;color:var(--muted);font-size:12px;margin-top:5px}
+    .kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:24px}.kpi{background:var(--pale);border-radius:16px;padding:19px 16px}.kpi .label{font-size:12px;color:var(--muted);font-weight:700}.kpi .num{font-size:clamp(17px,2.5vw,25px);font-weight:900;letter-spacing:-.025em;overflow-wrap:anywhere}.kpi.good{background:#eaf8f1}.kpi.warn{background:#fff4e7}
+    .two{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:22px}.mini{border:1px solid var(--line);padding:18px;border-radius:16px}.mini h3{margin:0 0 12px;font-size:16px}.barrow{display:grid;grid-template-columns:98px 1fr 50px;gap:8px;align-items:center;font-size:13px;margin:12px 0}.track{width:100%;height:12px;border-radius:15px;background:#e7edf5;overflow:hidden}.fill{width:0;height:100%;border-radius:15px;background:#2672de;transition:width .2s}.fill.cyan{background:#18b9bf}.fill.gold{background:#eea53d}.fill.red{background:#d15b65}.tip{background:#edf5ff;color:#234e7d;border-radius:12px;padding:12px 15px;font-size:13px;margin:14px 0 0}.danger{background:#fff1f1;color:#92343c}.success{background:#e9f8f0;color:#076547}
+    .progress{margin-top:20px}.progress strong{display:block;margin-bottom:6px}.pill{display:inline-block;background:#edf5ff;color:#155fba;padding:5px 11px;border-radius:30px;font-size:12px;font-weight:750}
+    .actionbar{display:flex;flex-wrap:wrap;gap:10px;margin-top:20px}.btn{border:0;border-radius:12px;padding:12px 18px;background:var(--blue);color:#fff;font-weight:800}.btn:hover{background:#104dac}.btn.secondary{background:#f1f6fc;border:1px solid #cedfed;color:#1b559a}.btn.secondary:hover{background:#e8f0fa}
+    .checklist{display:grid;gap:10px}.check{display:flex;gap:11px;align-items:start;padding:12px;border-radius:13px;border:1px solid var(--line);background:#f9fbfe}.check input{margin-top:5px;accent-color:var(--blue);width:18px;height:18px}.check span{font-size:14px}.check strong{display:block}.foot{padding:25px 0 40px;font-size:13px;color:#64738a}.foot a{color:#155fba}
+    .note{padding:13px 16px;background:#fff6e8;border:1px solid #f4d6a4;border-radius:12px;color:#765019;font-size:13px;margin-bottom:22px}.sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+    @media(max-width:920px){.menu{grid-template-columns:repeat(3,minmax(0,1fr))}.formgrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    @media(max-width:650px){.wrap{width:min(100% - 26px,1120px)}.hero{padding:43px 0}.menu{grid-template-columns:repeat(2,minmax(0,1fr))}.menulink{min-height:99px}.panel{padding:19px}.formgrid,.two{grid-template-columns:1fr}.kpis{grid-template-columns:1fr}.barrow{grid-template-columns:86px 1fr 44px}.topin{padding:10px 0}}
+    @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important}}
+  </style>
+</head>
+<body>
+  <header class="top"><div class="wrap topin"><a class="brand" href="index.html" aria-label="MILALA BANK beranda"><span class="brandicon" aria-hidden="true">▥</span><span>MILALA BANK</span></a><a class="back" href="index.html">← Kembali ke website</a></div></header>
+  <section class="hero"><div class="wrap"><div class="eyebrow">Alat edukasi keuangan gratis</div><h1>SMART FINANCE<br><span>ECOSYSTEM</span></h1><p>Kelola pengeluaran, rencanakan tabungan, hitung dana darurat, dan pahami keamanan keuangan. Tanpa menghubungkan rekening bank atau mengunggah data pribadi.</p><span class="tag">MILALA BANK · SIMULASI EDUKASI · BUKAN BANK SEBENARNYA</span></div></section>
+  <main class="wrap">
+    <div class="sectionhead"><h2>Menu keuangan</h2><p>Fitur berlabel <b>Aktif</b> bisa langsung digunakan. Fitur lainnya belum dirilis.</p></div>
+    <nav class="menu" aria-label="Menu Smart Finance">
+      <a class="menulink" href="#dashboard"><span class="menuicon" aria-hidden="true">▦</span><strong>Dashboard Keuangan</strong><small>Aktif</small></a>
+      <div class="menulink soon"><span class="menuicon" aria-hidden="true">✦</span><strong>AI Assistant</strong><small>Belum tersedia</small></div>
+      <a class="menulink" href="#analisis"><span class="menuicon" aria-hidden="true">▥</span><strong>Analisis Keuangan</strong><small>Aktif</small></a>
+      <div class="menulink soon"><span class="menuicon" aria-hidden="true">⇄</span><strong>Multi-Bank</strong><small>Belum tersedia</small></div>
+      <a class="menulink" href="#tabungan"><span class="menuicon" aria-hidden="true">◎</span><strong>Target Tabungan</strong><small>Aktif</small></a>
+      <div class="menulink soon"><span class="menuicon" aria-hidden="true">▤</span><strong>Invoice &amp; Tagihan</strong><small>Belum tersedia</small></div>
+      <div class="menulink soon"><span class="menuicon" aria-hidden="true">⌂</span><strong>Manajemen Bisnis</strong><small>Belum tersedia</small></div>
+      <a class="menulink" href="#keamanan"><span class="menuicon" aria-hidden="true">◈</span><strong>Security Center</strong><small>Aktif</small></a>
+      <a class="menulink" href="#laporan"><span class="menuicon" aria-hidden="true">▣</span><strong>Laporan Keuangan</strong><small>Aktif</small></a>
+      <div class="menulink soon"><span class="menuicon" aria-hidden="true">♧</span><strong>Family Finance</strong><small>Belum tersedia</small></div>
+    </nav>
+    <div class="note"><strong>Privasi:</strong> Semua perhitungan dilakukan di browser ini. Angka yang kamu isi tidak dikirim ke Firebase atau server MILALA BANK dan tidak disimpan otomatis. Hindari memasukkan nomor rekening, PIN, atau informasi sensitif.</div>
+    <section id="dashboard" class="panel" aria-labelledby="title-dashboard"><h2 id="title-dashboard">Dashboard Keuangan</h2><p class="intro">Isi ringkasan bulanan. Nilai awal hanya contoh simulasi; ganti dengan estimasi sendiri atau klik Hapus angka.</p>
+      <div class="formgrid">
+        <div class="field"><label for="income">Pemasukan per bulan (Rp)</label><input id="income" type="number" min="0" max="1000000000000" step="10000" value="5000000" inputmode="numeric"></div>
+        <div class="field"><label for="needs">Kebutuhan pokok (Rp)</label><input id="needs" type="number" min="0" max="1000000000000" step="10000" value="2200000" inputmode="numeric"></div>
+        <div class="field"><label for="wants">Keinginan / hiburan (Rp)</label><input id="wants" type="number" min="0" max="1000000000000" step="10000" value="700000" inputmode="numeric"></div>
+        <div class="field"><label for="debt">Cicilan / utang (Rp)</label><input id="debt" type="number" min="0" max="1000000000000" step="10000" value="400000" inputmode="numeric"></div>
+        <div class="field"><label for="other">Pengeluaran lain (Rp)</label><input id="other" type="number" min="0" max="1000000000000" step="10000" value="200000" inputmode="numeric"></div>
+        <div class="field"><label for="saved">Tabungan saat ini (Rp)</label><input id="saved" type="number" min="0" max="1000000000000" step="10000" value="2000000" inputmode="numeric"><span class="hint">Total tabungan yang tersedia, bukan saldo bank yang dibaca otomatis</span></div>
+      </div>
+      <div class="kpis" aria-live="polite"><div class="kpi"><span class="label">Pemasukan</span><div class="num" id="kIncome">–</div></div><div class="kpi"><span class="label">Total pengeluaran</span><div class="num" id="kExpense">–</div></div><div class="kpi good" id="kBalanceCard"><span class="label">Sisa anggaran</span><div class="num" id="kBalance">–</div></div></div>
+      <div class="actionbar"><button class="btn secondary" type="button" id="clear">Hapus angka simulasi</button></div>
+    </section>
+    <section id="analisis" class="panel" aria-labelledby="title-analisis"><h2 id="title-analisis">Analisis Keuangan</h2><p class="intro">Gambaran proporsi pengeluaran dan ruang menabung. Aturan 50/30/20 hanya panduan edukasi, bukan standar wajib untuk semua orang.</p>
+      <div class="two"><div class="mini"><h3>Distribusi dari pemasukan</h3>
+        <div class="barrow"><span>Kebutuhan</span><div class="track"><div class="fill" id="barNeeds"></div></div><strong id="pctNeeds">0%</strong></div>
+        <div class="barrow"><span>Keinginan</span><div class="track"><div class="fill cyan" id="barWants"></div></div><strong id="pctWants">0%</strong></div>
+        <div class="barrow"><span>Cicilan</span><div class="track"><div class="fill gold" id="barDebt"></div></div><strong id="pctDebt">0%</strong></div>
+        <div class="barrow"><span>Lainnya</span><div class="track"><div class="fill red" id="barOther"></div></div><strong id="pctOther">0%</strong></div>
+      </div><div class="mini"><h3>Ringkasan analisis</h3><p><span class="pill" id="healthTag">Menghitung…</span></p><p id="analysisText" aria-live="polite"></p><div class="tip">Tip: coba catat pengeluaran kecil setiap hari. Fokus pada kebiasaan yang bisa ditingkatkan, bukan membandingkan diri dengan orang lain.</div></div></div>
+    </section>
+    <section id="tabungan" class="panel" aria-labelledby="title-tabungan"><h2 id="title-tabungan">Target Tabungan &amp; Dana Darurat</h2><p class="intro">Rencanakan target tanpa memperhitungkan bunga atau keuntungan investasi.</p>
+      <div class="formgrid"><div class="field"><label for="goal">Target tabungan (Rp)</label><input id="goal" type="number" min="0" max="1000000000000" step="10000" value="10000000" inputmode="numeric"></div><div class="field"><label for="monthlySave">Rencana menabung per bulan (Rp)</label><input id="monthlySave" type="number" min="0" max="1000000000000" step="10000" value="500000" inputmode="numeric"></div><div class="field"><label for="reserveMonths">Target dana darurat (bulan kebutuhan)</label><input id="reserveMonths" type="number" min="1" max="24" step="1" value="6" inputmode="numeric"><span class="hint">Hitung berdasarkan kebutuhan pokok + cicilan bulanan</span></div></div>
+      <div class="two"><div class="mini"><h3>Progres target tabungan</h3><div class="progress"><strong id="goalText">–</strong><div class="track"><div id="goalBar" class="fill cyan"></div></div></div><p id="goalTime" aria-live="polite"></p></div><div class="mini"><h3>Dana darurat</h3><p id="reserveText" aria-live="polite"></p><div class="tip">Dana darurat berguna untuk kebutuhan mendesak. Simulasi ini bukan saran investasi atau produk keuangan.</div></div></div>
+    </section>
+    <section id="keamanan" class="panel" aria-labelledby="title-keamanan"><h2 id="title-keamanan">Security Center</h2><p class="intro">Checklist kebiasaan keamanan digital. Ini alat edukasi, bukan pemeriksaan keamanan akun secara otomatis.</p>
+      <div class="checklist"><label class="check"><input type="checkbox" class="securityCheck"><span><strong>Saya tidak membagikan OTP, PIN, atau password.</strong> Petugas resmi tidak perlu meminta kode rahasia tersebut.</span></label><label class="check"><input type="checkbox" class="securityCheck"><span><strong>Saya memeriksa alamat website sebelum login.</strong> Jangan masuk lewat tautan mencurigakan.</span></label><label class="check"><input type="checkbox" class="securityCheck"><span><strong>Saya menggunakan password yang berbeda untuk setiap layanan.</strong> Aktifkan perlindungan tambahan jika tersedia.</span></label><label class="check"><input type="checkbox" class="securityCheck"><span><strong>Saya memeriksa transaksi dan notifikasi secara berkala.</strong> Laporkan aktivitas tak dikenal lewat kanal resmi layanan terkait.</span></label></div>
+      <p class="tip" id="securityStatus" aria-live="polite">Checklist: 0 dari 4 selesai.</p><p class="intro" style="margin-top:14px;margin-bottom:0">Pelajari edukasi keuangan di <a href="https://sikapiuangmu.ojk.go.id/" target="_blank" rel="noopener noreferrer">Sikapi Uangmu (OJK)</a>.</p>
+    </section>
+    <section id="laporan" class="panel" aria-labelledby="title-laporan"><h2 id="title-laporan">Laporan Keuangan</h2><p class="intro">Ekspor ringkasan angka yang kamu isi ke CSV. Bukan rekening koran, bukti transaksi, atau catatan dari Firebase.</p><p id="reportSummary" aria-live="polite"></p><div class="actionbar"><button class="btn" id="exportBtn" type="button">Unduh ringkasan CSV</button></div></section>
+  </main>
+  <footer class="foot"><div class="wrap">© 2026 MILALA BANK · Simulasi edukasi, bukan bank sebenarnya. Tidak menerima dana dan tidak terhubung ke rekening bank sungguhan. <a href="index.html">Kembali ke website utama</a>.</div></footer>
+  <script>
+  (() => {
+    'use strict';
+    const $ = id => document.getElementById(id);
+    const fields = ['income','needs','wants','debt','other','saved','goal','monthlySave','reserveMonths'];
+    const rupiah = n => new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(n);
+    const value = id => {const n = Number($(id).value);return Number.isFinite(n) && n >= 0 ? Math.min(n,1e12) : 0;};
+    const percent = (n,base) => base > 0 ? Math.round(n/base*100) : 0;
+    const clampPct = n => Math.min(100,Math.max(0,n));
+    const text = (id,v) => {$(id).textContent=v;};
+    const nowData = () => Object.fromEntries(fields.map(f=>[f,value(f)]));
+    let last = null;
+    function render(){
+      const d = nowData();
+      const expense = d.needs+d.wants+d.debt+d.other;
+      const balance = d.income-expense;
+      last = {...d,expense,balance};
+      text('kIncome',rupiah(d.income));text('kExpense',rupiah(expense));text('kBalance',rupiah(balance));
+      $('kBalanceCard').className='kpi '+(balance>=0?'good':'warn');
+      for(const name of ['needs','wants','debt','other']){
+        const pct=percent(d[name],d.income);
+        text('pct'+name[0].toUpperCase()+name.slice(1),d.income?`${pct}%`:'–');
+        $('bar'+name[0].toUpperCase()+name.slice(1)).style.width=clampPct(pct)+'%';
+      }
+      let status,explain;
+      if(d.income===0){status='Belum ada pemasukan';explain='Masukkan estimasi pemasukan untuk melihat analisis bulanan.';}
+      else if(balance<0){status='Pengeluaran melebihi pemasukan';explain=`Defisit ${rupiah(-balance)} per bulan. Tinjau pengeluaran yang bisa dikurangi agar tidak terus menambah utang.`;}
+      else if(balance===0){status='Anggaran pas-pasan';explain='Tidak ada sisa anggaran bulan ini. Pertimbangkan ruang untuk dana darurat.';}
+      else{status='Masih ada sisa anggaran';explain=`Sisa ${rupiah(balance)} (${percent(balance,d.income)}% dari pemasukan). Sisihkan sesuai kondisi dan prioritasmu.`;}
+      text('healthTag',status);text('analysisText',explain);
+      const target=Math.max(0,d.goal), have=d.saved, remaining=Math.max(0,target-have);
+      const progress=target>0?clampPct(have/target*100):0;
+      $('goalBar').style.width=progress+'%';
+      text('goalText',target>0?`${rupiah(have)} dari ${rupiah(target)} (${Math.round(progress)}%)`:'Masukkan target tabungan');
+      if(target<=0)text('goalTime','Isi target untuk memperkirakan waktu menabung.');
+      else if(remaining===0)text('goalTime','Target telah tercapai berdasarkan nominal yang kamu masukkan.');
+      else if(d.monthlySave<=0)text('goalTime',`Masih perlu ${rupiah(remaining)}. Isi rencana menabung bulanan untuk menghitung waktu.`);
+      else text('goalTime',`Masih perlu ${rupiah(remaining)}. Dengan ${rupiah(d.monthlySave)} per bulan, sekitar ${Math.ceil(remaining/d.monthlySave)} bulan lagi.`);
+      const months=Math.max(1,Math.min(24,Math.floor(d.reserveMonths||6)));
+      const essential=d.needs+d.debt;
+      const reserve=essential*months;
+      const gap=Math.max(0,reserve-have);
+      text('reserveText',`Estimasi kebutuhan pokok + cicilan: ${rupiah(essential)}/bulan. Target ${months} bulan: ${rupiah(reserve)}. ${gap>0?'Kekurangan: '+rupiah(gap)+'.':'Tabungan yang dimasukkan sudah mencapai angka target.'}`);
+      text('reportSummary',`Ringkasan simulasi: pemasukan ${rupiah(d.income)}, pengeluaran ${rupiah(expense)}, sisa ${rupiah(balance)}, target tabungan ${rupiah(d.goal)}.`);
+    }
+    for(const id of fields){$(id).addEventListener('input',render);}
+    $('clear').addEventListener('click',()=>{for(const id of fields){$(id).value=id==='reserveMonths'?'6':'0';}render();});
+    const checks=[...document.querySelectorAll('.securityCheck')];
+    for(const check of checks)check.addEventListener('change',()=>{const n=checks.filter(c=>c.checked).length;text('securityStatus',`Checklist: ${n} dari ${checks.length} selesai. ${n===checks.length?'Pertahankan kebiasaan ini.':'Lengkapi sesuai kebiasaanmu.'}`);});
+    $('exportBtn').addEventListener('click',()=>{
+      if(!last)render();
+      const rows=[['Kategori','Nilai (IDR)'],['Pemasukan',last.income],['Kebutuhan pokok',last.needs],['Keinginan',last.wants],['Cicilan',last.debt],['Lain-lain',last.other],['Total pengeluaran',last.expense],['Sisa anggaran',last.balance],['Tabungan saat ini',last.saved],['Target tabungan',last.goal],['Setoran tabungan per bulan',last.monthlySave],['Bulan target dana darurat',last.reserveMonths]];
+      const csv='\ufeff'+rows.map(row=>row.join(';')).join('\r\n');
+      const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
+      const a=document.createElement('a');a.href=url;a.download='milala-smart-finance-ringkasan.csv';document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
+    });
+    render();
+  })();
+  </script>
+</body>
+</html>

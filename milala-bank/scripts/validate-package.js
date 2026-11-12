@@ -9,7 +9,7 @@ for (const file of ['firebase.json', '.firebaserc', 'database.rules.json', 'verc
   console.log('JSON OK:', file);
 }
 
-for (const file of ['assets/js/app.js', 'assets/js/store.js', 'assets/js/seed.js', 'lib/banking.js', 'api/[action].js', 'scripts/migrate-staff.js']) {
+for (const file of ['assets/js/app.js', 'assets/js/store.js', 'assets/js/ecosystem.js', 'assets/js/seed.js', 'lib/banking.js', 'api/[action].js', 'scripts/migrate-staff.js']) {
   const result = spawnSync(process.execPath, ['--check', path.join(root, file)], { encoding: 'utf8' });
   if (result.status !== 0) throw new Error(`${file}\n${result.stderr || result.stdout}`);
   console.log('Syntax OK:', file);

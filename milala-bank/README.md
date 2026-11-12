@@ -1,5 +1,7 @@
 # MILALA BANK — Firebase Spark + Vercel Functions
 
+> **Smart Finance Ecosystem update:** 10 add-on finance modules, public/user feedback, admin/manager feedback inbox, and Indonesia/English/中文 language selection. Read [docs/SMART_FINANCE.md](docs/SMART_FINANCE.md) before deploying. Core banking data and previous routes remain separate and available.
+
 **MILALA BANK is an educational banking simulation.** Account balances, transfers, statements, and loans are virtual only. Do not use real money, real identity documents, or real bank-account data.
 
 This release uses:

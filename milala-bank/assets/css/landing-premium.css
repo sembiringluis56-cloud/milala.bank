@@ -1,0 +1,114 @@
+/* MILALA BANK — Premium public landing add-on. All selectors scoped to public home. */
+html { scroll-padding-top: 95px; }
+#app .ml-premium-header { background:rgba(255,255,255,.92); backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px); box-shadow:0 1px 0 rgba(13,41,79,.07),0 10px 36px rgba(21,63,116,.04); }
+#app .ml-premium-header .public-brand strong { letter-spacing:.07em; }
+#app .ml-premium-header .public-nav { gap:24px; }
+#app .ml-premium-header .public-nav a { transition:color .2s ease; }
+#app .ml-premium-header .public-nav a:hover { color:#0755bc; }
+#app .ml-premium-home { color:#12254b; background:#f7faff; overflow:hidden; }
+#app .ml-premium-home .public-hero { position:relative; isolation:isolate; overflow:hidden; background:radial-gradient(ellipse 55% 75% at 75% 30%,#d9eafa 0%,transparent 68%), radial-gradient(ellipse 52% 85% at 0% 0%,#effaff 0%,transparent 65%),linear-gradient(142deg,#f6faff,#e8f1fc 88%); }
+#app .ml-premium-home .public-hero:before { content:"";position:absolute;inset:0;z-index:-1;background-image:radial-gradient(#1b68aa1c .75px,transparent .75px);background-size:25px 25px;mask-image:linear-gradient(90deg,transparent 32%,#000 100%);pointer-events:none; }
+#app .ml-premium-home .hero-copy h1 { font-weight:850;letter-spacing:-.067em;line-height:1.08; }
+#app .ml-premium-home .hero-copy h1 em { background:linear-gradient(90deg,#0b79c5 0%,#0663bb 48%,#092e70 100%);background-clip:text;-webkit-background-clip:text;color:transparent;font-style:normal; }
+#app .ml-premium-home .hero-copy>p { max-width:500px;line-height:1.9; }
+#app .ml-premium-home .hero-kicker { letter-spacing:.12em; }
+#app .ml-premium-home .hero-visual {filter:drop-shadow(0 24px 44px rgba(5,37,86,.09));}
+#app .ml-premium-home .hero-card {background:linear-gradient(145deg,#03142f 0%,#124b8e 54%,#0899b0 100%);box-shadow:0 35px 85px #123c7e4c, inset 0 1px 0 #ffffff70;}
+#app .ml-premium-home .public-cta {box-shadow:0 9px 22px #105dcf29;transition:transform .2s ease,box-shadow .2s ease;}
+#app .ml-premium-home .public-cta:hover {transform:translateY(-2px);box-shadow:0 14px 28px #105dcf38;}
+#app .ml-hero-help { color:#235b9c;text-decoration:none;font-weight:800;font-size:12px;display:inline-flex;gap:7px;align-items:center;padding:12px 3px; }
+#app .ml-hero-help:hover {color:#0a83a6;}
+#app .ml-premium-home .public-stats { background:#fff; }
+#app .ml-premium-home .public-service {border-color:#e5eefa;border-radius:23px;box-shadow:0 12px 32px #1c47890c;}
+#app .ml-premium-home .public-service:hover {transform:translateY(-5px);box-shadow:0 24px 48px #154d7c1d;}
+#app .ml-premium-home .public-feature-band { border:1px solid #f5ffff1f;background:radial-gradient(circle at 95% 90%,#157e9b 0%,transparent 33%),linear-gradient(115deg,#071831,#0e3569 70%,#0c607a);box-shadow:0 24px 58px #08265424;}
+#app .ml-premium-home .public-about { margin-top:24px; }
+#app .ml-belt,#app .ml-help,#app .ml-feedback {box-sizing:border-box;}
+#app .ml-belt * ,#app .ml-help *,#app .ml-feedback * {box-sizing:border-box;}
+#app .ml-belt { padding:27px clamp(20px,8vw,125px); display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px;max-width:1600px;margin:0 auto;background:#f7faff; }
+#app .ml-belt>div {min-width:0;display:flex;gap:14px;align-items:center;padding:17px 18px;border:1px solid #e4ebf5;border-radius:18px;background:white;box-shadow:0 7px 25px #10295108;}
+#app .ml-belt-icon {display:grid;place-items:center;flex:none;width:42px;height:42px;border-radius:14px;background:#e8f5fc;color:#087baf;font-size:21px;font-weight:900;}
+#app .ml-belt strong,#app .ml-belt small {display:block;}
+#app .ml-belt strong {font-size:12px;font-weight:800;color:#102f56;}
+#app .ml-belt small {font-size:10px;color:#6b83a0;margin-top:2px;}
+#app .ml-help {padding:95px clamp(22px,8vw,125px) 85px;background:linear-gradient(#f7faff,#f1f7fd);scroll-margin-top:85px;}
+#app .ml-help-head {display:flex;justify-content:space-between;align-items:end;gap:35px;margin-bottom:38px;}
+#app .ml-overline {font-size:11px;letter-spacing:.17em;color:#0e86a3;font-weight:900;display:inline-block;margin-bottom:14px;}
+#app .ml-help h2,#app .ml-feedback h2 {margin:0;color:#0b2751;line-height:1.12;letter-spacing:-.055em;font-size:clamp(32px,4vw,48px);font-weight:850;}
+#app .ml-help h2 em,#app .ml-feedback h2 em {font-style:normal;color:#1566ca;}
+#app .ml-help-head>p {max-width:360px;font-size:13px;line-height:1.8;color:#637992;margin:0;}
+#app .ml-help-layout {display:grid;grid-template-columns: minmax(210px,.65fr) minmax(0,1.55fr);gap:28px;align-items:start;}
+#app .ml-info-card {background:linear-gradient(155deg,#071b3b,#104577 93%);color:#fff;border-radius:23px;padding:28px;box-shadow:0 19px 44px #1d4e7d24;}
+#app .ml-info-symbol {display:grid;place-items:center;font-size:29px;font-weight:750;width:58px;height:58px;border:1px solid #ffffff57;border-radius:20px;color:#99eff4;margin-bottom:33px;}
+#app .ml-info-card h3 {font-size:22px;letter-spacing:-.03em;line-height:1.3;margin:0 0 13px;color:white;}
+#app .ml-info-card p {font-size:12px;line-height:1.8;color:#d4e4f2;margin:0;}
+#app .ml-mini-rule {height:1px;background:#ffffff30;margin:25px 0;}
+#app .ml-info-card .ml-mini-note {font-size:11px;color:#bad2e5;}
+#app .ml-help-questions {background:#fff;border:1px solid #e5eefa;border-radius:24px;padding:24px;box-shadow:0 15px 44px #0e3f7d0b;}
+#app .ml-search-label,#app .ml-field>label {display:block;font-size:12px;font-weight:800;color:#183b62;margin-bottom:8px;}
+#app .ml-search {display:flex;gap:9px;align-items:center;border:1px solid #dae6f3;background:#f9fcff;border-radius:12px;padding:0 14px;margin-bottom:20px;color:#4781ae;}
+#app .ml-search:focus-within {border-color:#2680df;box-shadow:0 0 0 3px #2673db18;}
+#app .ml-search input {height:45px;width:100%;border:0;background:transparent;outline:0;color:#143256;font-size:12px;min-width:0;}
+#app .ml-faq-item {border-bottom:1px solid #e6edf6;}
+#app .ml-faq-item:last-child {border-bottom:0;}
+#app .ml-faq-item[hidden] {display:none;}
+#app .ml-faq-item summary {display:flex;gap:15px;align-items:center;list-style:none;padding:20px 5px;cursor:pointer;user-select:none;}
+#app .ml-faq-item summary::-webkit-details-marker {display:none;}
+#app .ml-faq-index {font-size:11px;letter-spacing:.08em;color:#7da2c2;font-weight:800;min-width:21px;}
+#app .ml-faq-q {font-size:13px;font-weight:800;color:#1a3558;flex:1;line-height:1.5;}
+#app .ml-faq-plus {font-size:21px;flex:none;color:#2b73b8;width:25px;text-align:center;transition:transform .2s;}
+#app .ml-faq-item[open] .ml-faq-plus {transform:rotate(45deg);}
+#app .ml-faq-item[open] .ml-faq-q {color:#0c6fc4;}
+#app .ml-faq-answer {padding:0 35px 20px 41px;}
+#app .ml-category {font-size:10px;font-weight:800;color:#0f6683;background:#e9f8fa;border-radius:99px;padding:4px 9px;}
+#app .ml-faq-answer p {font-size:12px;line-height:1.85;margin:13px 0 0;color:#627892;}
+#app .ml-faq-empty {font-size:13px;color:#647892;padding:10px 4px;}
+#app .ml-feedback {margin:26px clamp(22px,8vw,125px) 90px;padding:48px;display:grid;grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr);gap:45px;background:white;border:1px solid #e4eefa;border-radius:28px;box-shadow:0 22px 75px #0e478012;scroll-margin-top:92px;}
+#app .ml-feedback-lead {padding:15px 0;}
+#app .ml-feedback-lead>p {margin:22px 0 25px;color:#687f98;font-size:13px;line-height:1.9;max-width:380px;}
+#app .ml-feedback-privacy {display:inline-flex;align-items:center;gap:9px;color:#126f82;font-size:11px;font-weight:700;background:#e9f7f8;padding:13px 15px;border-radius:11px;line-height:1.6;}
+#app .ml-feedback-form {border-radius:21px;padding:27px;background:#f8fbff;border:1px solid #e9f0f8;}
+#app .ml-field {margin-bottom:17px;}
+#app .ml-field select,#app .ml-field textarea {width:100%;font:inherit;font-size:12px;color:#102e51;border:1px solid #d8e5f2;border-radius:11px;background:white;min-height:44px;padding:12px 13px;resize:vertical;}
+#app .ml-field select:focus,#app .ml-field textarea:focus {outline:3px solid #a0d9ff;outline-offset:1px;}
+#app .ml-field textarea {line-height:1.7;min-height:117px;}
+#app .ml-field small {font-size:10px;color:#7a8ca2;display:block;text-align:right;margin-top:3px;}
+#app .ml-rating {border:0;padding:0;margin:0 0 17px;min-width:0;}
+#app .ml-rating legend {font-size:12px;font-weight:800;color:#183b62;margin-bottom:10px;}
+#app .ml-rating legend span {font-weight:500;color:#8498ad;}
+#app .ml-rating-options {display:flex;flex-wrap:wrap;gap:7px;}
+#app .ml-rating-options label {position:relative;cursor:pointer;}
+#app .ml-rating-options input {position:absolute;opacity:0;width:1px;height:1px;}
+#app .ml-rating-options span {display:block;border:1px solid #d9e5f2;background:white;padding:8px 11px;border-radius:9px;font-size:11px;font-weight:800;color:#637d9c;transition:background .15s,border-color .15s;}
+#app .ml-rating-options input:checked+span {background:#e4f1ff;border-color:#438ddd;color:#124e92;}
+#app .ml-rating-options input:focus-visible+span {outline:3px solid #79c3ff;outline-offset:2px;}
+#app .ml-feedback-actions {display:flex;gap:9px;flex-wrap:wrap;}
+#app .ml-send,#app .ml-copy {border:0;border-radius:11px;padding:12px 19px;font-size:12px;font-weight:850;cursor:pointer;min-height:44px;}
+#app .ml-send {color:white;background:linear-gradient(110deg,#1255c0,#1180cb);box-shadow:0 9px 23px #145cbb24;display:flex;gap:14px;justify-content:center;align-items:center;}
+#app .ml-send:hover {filter:brightness(1.08);}
+#app .ml-copy {color:#1d527e;background:#e7eff8;}
+#app .ml-feedback-disclosure {font-size:10px;color:#68819b;line-height:1.7;margin:14px 0 0;}
+#app .ml-feedback-status {font-size:12px;color:#08715a;font-weight:750;margin:9px 0 0;min-height:16px;line-height:1.55;}
+#app .ml-feedback-status.ml-error {color:#ad3e48;}
+#app .ml-help a:focus-visible,#app .ml-feedback button:focus-visible,#app .ml-feedback input:focus-visible,#app .ml-hero-help:focus-visible,#app .ml-faq-item summary:focus-visible {outline:3px solid #60bff4;outline-offset:3px;}
+@media(max-width:960px){
+  #app .ml-help-layout {grid-template-columns:1fr 1.5fr;}
+  #app .ml-feedback {gap:25px;padding:34px;}
+}
+@media(max-width:720px){
+  #app .ml-belt {grid-template-columns:1fr;gap:9px;padding:20px 16px;}
+  #app .ml-belt>div {padding:13px 15px;}
+  #app .ml-help {padding:62px 18px;}
+  #app .ml-help-head {display:block;margin-bottom:25px;}
+  #app .ml-help-head>p {margin-top:15px;max-width:100%;}
+  #app .ml-help-layout {grid-template-columns:1fr;gap:16px;}
+  #app .ml-info-card {padding:22px;}
+  #app .ml-info-symbol {margin-bottom:18px;}
+  #app .ml-help-questions {padding:15px;}
+  #app .ml-faq-item summary {padding:16px 2px;gap:10px;}
+  #app .ml-faq-answer {padding:0 25px 17px 32px;}
+  #app .ml-feedback {margin:0 14px 66px;padding:23px;display:block;}
+  #app .ml-feedback-form {padding:18px;margin-top:22px;}
+  #app .ml-premium-home .hero-copy h1 {letter-spacing:-.06em;}
+}
+@media(prefers-reduced-motion:reduce){#app .ml-premium-home *,#app .ml-faq-plus {transition:none!important;}}

@@ -3,7 +3,7 @@
 const { getAuth } = require('firebase-admin/auth');
 const banking = require('../lib/banking');
 
-const PUBLIC_ACTIONS = new Set(['getPublicInfo']);
+const PUBLIC_ACTIONS = new Set(['getPublicInfo', 'submitFeedback']);
 const ACTIONS = new Set([
   'getPublicInfo',
   'getUserContext',
@@ -13,7 +13,11 @@ const ACTIONS = new Set([
   'getCustomerPortalData',
   'applyCustomerLoan',
   'commitStaffSnapshot',
-  'manageStaffAccount'
+  'manageStaffAccount',
+  'getFinanceWorkspace',
+  'saveFinanceWorkspace',
+  'submitFeedback',
+  'getFeedback'
 ]);
 
 const STATUS = {
@@ -98,7 +102,7 @@ module.exports = async function handler(req, res) {
   }
 
   try {
-    const result = await banking[action]({ auth, data });
+    const result = await banking[action]({ auth, data, meta: { ip: String(req.headers['x-forwarded-for'] || req.socket?.remoteAddress || '').split(',')[0].trim().slice(0, 100) } });
     return res.status(200).json(result === undefined ? { ok: true } : result);
   } catch (error) {
 
