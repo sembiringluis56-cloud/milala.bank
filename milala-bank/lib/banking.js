@@ -45,6 +45,41 @@ const db = () => getDatabase();
 const authAdmin = () => getAuth();
 const rootRef = () => db().ref(ROOT_PATH);
 const secureRef = () => db().ref(SECURE_PATH);
+
+async function withLiveRoot(task) {
+  const ref = rootRef();
+  let listener;
+
+  try {
+    await new Promise((resolve, reject) => {
+      let initialized = false;
+
+      listener = (snapshot) => {
+        if (initialized) return;
+        initialized = true;
+
+        if (!snapshot.exists()) {
+          reject(new HttpsError(
+            'failed-precondition',
+            'Database utama MILALA BANK tidak tersedia.'
+          ));
+          return;
+        }
+
+        resolve();
+      };
+
+      ref.on('value', listener, reject);
+    });
+
+    return await task(ref);
+  } finally {
+    if (listener) {
+      ref.off('value', listener);
+    }
+  }
+}
+
 const clone = (v) => JSON.parse(JSON.stringify(v));
 const nowIso = () => new Date().toISOString();
 const isObj = (v) => v && typeof v === 'object' && !Array.isArray(v);
@@ -90,7 +125,13 @@ async function assertStaff(request, allowedRoles = STAFF_ROLES) {
   if (!profile || profile.active !== true || profile.role !== claims.role || profile.staffId !== claims.staffId) {
     fail('permission-denied', 'Akun staf tidak aktif atau profil akses tidak cocok.');
   }
-  return { uid: auth.uid, role: claims.role, staffId: claims.staffId, branch: claims.branch || profile.branch || null, email: auth.token.email || profile.email || '' };
+ return {
+  uid: auth.uid,
+  role: claims.role,
+  staffId: claims.staffId,
+  branch: profile.branch || null,
+  email: auth.token.email || profile.email || ''
+};
 }
 
 async function assertCustomer(request) {
@@ -515,9 +556,12 @@ exports.commitStaffSnapshot = onCall(async (request) => {
   return { state: normalizeState(result.snapshot.val()) };
 });
 
+
+
 exports.manageStaffAccount = onCall(async (request) => {
   const actor = await assertStaff(request, ['admin']);
   const data = request.data || {};
+
   const id = String(data.id || '').trim();
   const name = String(data.name || '').trim();
   const email = String(data.email || '').trim().toLowerCase();
@@ -525,58 +569,540 @@ exports.manageStaffAccount = onCall(async (request) => {
   const branch = String(data.branch || '');
   const active = data.active === true;
   const password = String(data.password || '');
-  if (name.length < 3 || name.length > 80 || !/^\S+@\S+\.\S+$/.test(email) || !STAFF_ROLES.includes(role) || !branch) fail('invalid-argument', 'Data staf tidak valid.');
-  if (!id && password.length < 12) fail('invalid-argument', 'Password awal staf minimal 12 karakter.');
-  if (password && password.length < 12) fail('invalid-argument', 'Password baru minimal 12 karakter.');
-  const state = normalizeState((await rootRef().get()).val());
-  if (!state || !state.branches.some((b) => b.id === branch && b.active)) fail('failed-precondition', 'Cabang tidak ditemukan atau nonaktif.');
-  const existing = id ? state.users.find((u) => u.id === id) : null;
-  if (id && !existing) fail('not-found', 'Akun staf tidak ditemukan.');
-  if (existing && existing.uid === actor.uid && (!active || role !== 'admin')) fail('failed-precondition', 'Super Admin tidak dapat menonaktifkan atau menurunkan role akunnya sendiri.');
-  if (state.users.some((u) => u.id !== id && String(u.email).toLowerCase() === email)) fail('already-exists', 'Email staf sudah digunakan.');
+
+  if (
+    name.length < 3 ||
+    name.length > 80 ||
+    !/^\S+@\S+\.\S+$/.test(email) ||
+    !STAFF_ROLES.includes(role) ||
+    !branch
+  ) {
+    fail('invalid-argument', 'Data staf tidak valid.');
+  }
+
+  if (!id && password.length < 12) {
+    fail('invalid-argument', 'Password awal staf minimal 12 karakter.');
+  }
+
+  if (password && password.length < 12) {
+    fail('invalid-argument', 'Password baru minimal 12 karakter.');
+  }
+
+  // Ambil kondisi awal database.
+  const initialSnapshot = await rootRef().once('value');
+
+  if (!initialSnapshot.exists()) {
+    fail('failed-precondition', 'Database utama tidak tersedia.');
+  }
+
+  const rawState = initialSnapshot.val();
+  const state = normalizeState(rawState);
+
+  if (!state) {
+    fail('failed-precondition', 'Data database tidak valid.');
+  }
+
+  if (!state.branches.some((b) => b.id === branch && b.active)) {
+    fail('failed-precondition', 'Cabang tidak ditemukan atau nonaktif.');
+  }
+
+  const existing = id
+    ? state.users.find((u) => u.id === id)
+    : null;
+
+  if (id && !existing) {
+    fail('not-found', 'Akun staf tidak ditemukan.');
+  }
+
+  if (
+    existing &&
+    existing.uid === actor.uid &&
+    (!active || role !== 'admin')
+  ) {
+    fail(
+      'failed-precondition',
+      'Super Admin tidak dapat menonaktifkan atau menurunkan role akunnya sendiri.'
+    );
+  }
+
+  if (
+    state.users.some(
+      (u) =>
+        u.id !== id &&
+        String(u.email || '').trim().toLowerCase() === email
+    )
+  ) {
+    fail('already-exists', 'Email staf sudah digunakan.');
+  }
+
+  const rawUsers = Array.isArray(rawState.users)
+    ? rawState.users
+    : isObj(rawState.users)
+      ? Object.values(rawState.users)
+      : [];
+
+  const previousStaffRecord = id
+    ? rawUsers.find((u) => u && u.id === id)
+    : null;
+
+  if (id && !previousStaffRecord) {
+    fail('not-found', 'Data staf asli tidak ditemukan.');
+  }
+const rollbackStaffRecord = previousStaffRecord
+  ? { ...previousStaffRecord }
+  : null;
+
+if (rollbackStaffRecord) {
+  delete rollbackStaffRecord.password;
+}
   let uid = existing?.uid || null;
+  const staffId = existing?.id ||
+    `USR-${randomUUID().slice(0, 8).toUpperCase()}`;
+
   let createdAuthUser = false;
+  let rootCommitted = false;
+  let committedRevision = null;
+  let authChangesStarted = false;
+
+  let oldAuth = null;
+  let oldProfile = null;
+  let oldProfileExists = false;
+
+  let profileRef = null;
+  let committedLogId = null;
+
+  const expectedProfile = {
+    uid: null,
+    staffId,
+    name,
+    email,
+    role,
+    branch,
+    active
+  };
+
   try {
+    // STEP 1: Siapkan Firebase Authentication.
     if (existing) {
-      if (!uid) fail('failed-precondition', 'Akun staf lama belum dimigrasikan. Jalankan skrip migrasi staf terlebih dahulu.');
-      const update = { email, displayName: name, disabled: !active };
-      if (password) update.password = password;
-      await authAdmin().updateUser(uid, update);
+      if (!uid) {
+        fail(
+          'failed-precondition',
+          'Akun staf belum dimigrasikan.'
+        );
+      }
+
+      oldAuth = await authAdmin().getUser(uid);
     } else {
-      const record = await authAdmin().createUser({ email, password, displayName: name, disabled: !active });
+      let record;
+
+      try {
+        record = await authAdmin().createUser({
+          email,
+          password,
+          displayName: name,
+          disabled: true
+        });
+      } catch (error) {
+        if (error.code === 'auth/email-already-exists') {
+          fail('already-exists', 'Email sudah digunakan di Firebase Authentication.');
+        }
+        throw error;
+      }
+
       uid = record.uid;
       createdAuthUser = true;
     }
-    const staffId = existing?.id || `USR-${randomUUID().slice(0, 8).toUpperCase()}`;
-    await authAdmin().setCustomUserClaims(uid, { staff: true, role, staffId, branch });
-    const nextState = await new Promise((resolve, reject) => {
-      rootRef().transaction((current) => {
-        if (!current) return;
-        const currentState = normalizeState(current);
-        if (id) {
-          const target = currentState.users.find((u) => u.id === id);
-          if (!target || target.uid !== uid) return;
-          Object.assign(target, { name, email, role, branch, active, uid });
-        } else {
-          if (currentState.users.some((u) => String(u.email).toLowerCase() === email)) return;
-          currentState.users.push({ id: staffId, name, email, role, branch, active, uid });
+
+    expectedProfile.uid = uid;
+
+    // Simpan profil lama untuk kebutuhan rollback.
+    profileRef = secureRef()
+      .child('staffProfiles')
+      .child(uid);
+
+    const oldProfileSnapshot = await profileRef.get();
+
+    oldProfileExists = oldProfileSnapshot.exists();
+    oldProfile = oldProfileSnapshot.val();
+
+    // STEP 2: Transaksi database utama.
+    let abortReason = 'unknown';
+
+const nextState = await withLiveRoot((ref) =>
+  new Promise((resolve, reject) => {
+    ref.transaction((current) => {        abortReason = 'unknown';
+
+        if (!current) {
+          abortReason = 'root-null';
+          return;
         }
-        currentState.revision = Number(currentState.revision || 0) + 1;
+
+        const currentState = clone(current);
+
+        currentState.users = Array.isArray(currentState.users)
+          ? currentState.users.filter(Boolean)
+          : isObj(currentState.users)
+            ? Object.values(currentState.users).filter(Boolean)
+            : [];
+
+        currentState.branches = Array.isArray(currentState.branches)
+          ? currentState.branches
+          : isObj(currentState.branches)
+            ? Object.values(currentState.branches)
+            : [];
+
+        currentState.audit = Array.isArray(currentState.audit)
+          ? currentState.audit.filter(Boolean)
+          : isObj(currentState.audit)
+            ? Object.values(currentState.audit).filter(Boolean)
+            : [];
+
+        currentState.counters = isObj(currentState.counters)
+          ? currentState.counters
+          : {
+              customer: 1,
+              account: 1,
+              transaction: 1,
+              loan: 1,
+              log: 1
+            };
+
+        currentState.revision = Number(currentState.revision || 0);
+
+        // Validasi ulang cabang.
+        if (
+          !currentState.branches.some(
+            (b) => b && b.id === branch && b.active === true
+          )
+        ) {
+          abortReason = 'branch-unavailable';
+          return;
+        }
+
+        // Cegah email duplikat.
+        const duplicateEmail = currentState.users.some(
+          (staff) =>
+            staff &&
+            staff.id !== id &&
+            String(staff.email || '').trim().toLowerCase() === email
+        );
+
+        if (duplicateEmail) {
+          abortReason = 'duplicate-email';
+          return;
+        }
+
+        if (id) {
+          const target = currentState.users.find(
+            (u) => u && u.id === id
+          );
+
+          if (
+            !target ||
+            target.uid !== uid ||
+            String(target.email || '').trim().toLowerCase() !==
+              String(existing.email || '').trim().toLowerCase() ||
+            target.name !== existing.name ||
+            target.role !== existing.role ||
+            target.branch !== existing.branch ||
+            target.active !== existing.active
+          ) {
+            abortReason = 'staff-changed';
+            return;
+          }
+
+          Object.assign(target, {
+            name,
+            email,
+            role,
+            branch,
+            active,
+            uid
+          });
+        } else {
+          currentState.users.push({
+            id: staffId,
+            name,
+            email,
+            role,
+            branch,
+            active,
+            uid
+          });
+        }
+
+        currentState.revision += 1;
+
         const logSeq = Number(currentState.counters.log || 1);
-        currentState.audit.unshift({ id: `LOG-${String(logSeq).padStart(5, '0')}`, date: nowIso(), actor: actor.staffId, action: id ? 'UPDATE_STAFF' : 'CREATE_STAFF', module: 'Pengguna', description: `${email} · ${role} · ${active ? 'Aktif' : 'Nonaktif'}` });
+
+        committedLogId =
+          `LOG-${String(logSeq).padStart(5, '0')}`;
+
+        currentState.audit.unshift({
+          id: committedLogId,
+          date: nowIso(),
+          actor: actor.staffId,
+          action: id ? 'UPDATE_STAFF' : 'CREATE_STAFF',
+          module: 'Pengguna',
+          description: `${email} | ${role} | ${active ? 'Aktif' : 'Nonaktif'}`
+        });
+
         currentState.counters.log = logSeq + 1;
+
         return currentState;
       }, (error, committed, snapshot) => {
-        if (error) reject(error);
-        else if (!committed) reject(new Error('Data staf berubah atau email sudah digunakan. Muat ulang lalu coba kembali.'));
-        else resolve(normalizeState(snapshot.val()));
-      }, false);
+        if (error) {
+          reject(error);
+        } else if (!committed) {
+          console.error('[MILALA STAFF TRANSACTION ABORT]', {
+            reason: abortReason
+          });
+
+          reject(new HttpsError(
+            'aborted',
+            'Data staf berubah atau transaksi dibatalkan. Muat ulang halaman.'
+          ));
+        } else {
+          const committedState = normalizeState(snapshot.val());
+          committedRevision = Number(committedState.revision);
+          rootCommitted = true;
+          resolve(committedState);
+        }
+            }, false);
+    })
+  );
+
+    // STEP 3: Simpan profil akses.
+    await profileRef.set(expectedProfile);
+
+    // STEP 4: Sinkronkan Authentication setelah database berhasil.
+    if (existing) {
+      authChangesStarted = true;
+
+      await authAdmin().updateUser(uid, {
+        email,
+        displayName: name,
+        disabled: !active
+      });
+    }
+
+    // Pertahankan Custom Claims lain yang sudah ada.
+    const latestAuth = await authAdmin().getUser(uid);
+
+    authChangesStarted = true;
+
+    await authAdmin().setCustomUserClaims(uid, {
+      ...(latestAuth.customClaims || {}),
+      staff: true,
+      role,
+      staffId,
+      branch
     });
-    await secureRef().child('staffProfiles').child(uid).set({ uid, staffId: existing?.id || nextState.users.find((u) => u.uid === uid).id, name, email, role, branch, active });
+
+    // Password diperbarui sebagai operasi terakhir untuk akun lama.
+    if (existing && password) {
+      await authAdmin().updateUser(uid, {
+        password
+      });
+    }
+
+    // Akun baru baru diaktifkan setelah seluruh data siap.
+    if (createdAuthUser) {
+      await authAdmin().updateUser(uid, {
+        disabled: !active
+      });
+    }
+
+    console.log('[MILALA STAFF SAVE SUCCESS]', {
+      staffId,
+      action: id ? 'UPDATE_STAFF' : 'CREATE_STAFF'
+    });
+
     return { state: nextState };
+
   } catch (error) {
-    if (createdAuthUser && uid) await authAdmin().deleteUser(uid).catch(() => {});
-    if (error instanceof HttpsError) throw error;
-    fail('internal', error.message || 'Gagal menyimpan akun staf.');
+    let databaseRollbackOk = !rootCommitted;
+    let profileRollbackOk = true;
+
+    // STEP 5: Kembalikan transaksi database jika diperlukan.
+    if (rootCommitted) {
+      try {
+        databaseRollbackOk = await withLiveRoot((ref) => new Promise((resolve, reject) => {
+          ref.transaction((current) => {
+            if (!current) return;
+            if (Number(current.revision || 0) !== committedRevision) return;
+
+            const rollbackState = clone(current);
+
+            rollbackState.users = Array.isArray(rollbackState.users)
+              ? rollbackState.users.filter(Boolean)
+              : isObj(rollbackState.users)
+                ? Object.values(rollbackState.users).filter(Boolean)
+                : [];
+
+            const index = rollbackState.users.findIndex(
+              (u) => u && u.id === staffId && u.uid === uid
+            );
+
+            if (index === -1) return;
+
+            const target = rollbackState.users[index];
+
+            // Jangan menimpa perubahan baru dari proses lain.
+            if (
+              target.name !== name ||
+              target.email !== email ||
+              target.role !== role ||
+              target.branch !== branch ||
+              target.active !== active
+            ) {
+              return;
+            }
+
+            if (existing) {
+	     rollbackState.users[index] = rollbackStaffRecord;
+            } else {
+              rollbackState.users.splice(index, 1);
+            }
+
+            const rollbackAudit = Array.isArray(rollbackState.audit)
+  ? rollbackState.audit
+  : isObj(rollbackState.audit)
+    ? Object.values(rollbackState.audit)
+    : [];
+
+rollbackState.audit = rollbackAudit.filter(
+  (entry) => entry && entry.id !== committedLogId
+);
+
+            rollbackState.revision =
+              Number(rollbackState.revision || 0) + 1;
+
+            return rollbackState;
+          }, (rollbackError, committed) => {
+            if (rollbackError) reject(rollbackError);
+            else resolve(committed);
+          }, false);
+        }));
+      } catch (rollbackError) {
+        databaseRollbackOk = false;
+
+        console.error('[MILALA STAFF DATABASE ROLLBACK FAILED]', {
+          code: rollbackError?.code || 'unknown'
+        });
+      }
+
+      // STEP 6: Kembalikan profil lama.
+      if (databaseRollbackOk) {
+        try {
+          const currentProfileSnapshot = await profileRef.get();
+          const currentProfile = currentProfileSnapshot.val();
+          const oldProfileValue = oldProfileExists ? oldProfile : null;
+
+          if (stable(currentProfile) === stable(expectedProfile)) {
+            if (oldProfileExists) {
+              await profileRef.set(oldProfile);
+            } else {
+              await profileRef.remove();
+            }
+          } else if (
+            stable(currentProfile) !== stable(oldProfileValue)
+          ) {
+            profileRollbackOk = false;
+          }
+        } catch (profileError) {
+          profileRollbackOk = false;
+
+          console.error('[MILALA STAFF PROFILE ROLLBACK FAILED]', {
+            code: profileError?.code || 'unknown'
+          });
+        }
+      } else {
+        profileRollbackOk = false;
+      }
+    }
+
+    // STEP 7: Pulihkan Authentication atau nonaktifkan akun.
+    const safeToRestore =
+      databaseRollbackOk && profileRollbackOk;
+
+    if (createdAuthUser && uid) {
+      if (safeToRestore) {
+        try {
+          await authAdmin().deleteUser(uid);
+        } catch (deleteError) {
+          console.error('[MILALA STAFF DELETE FAILED]', {
+            code: deleteError?.code || 'unknown'
+          });
+
+          await authAdmin().updateUser(uid, {
+            disabled: true
+          }).catch(() => {});
+        }
+      } else {
+        await authAdmin().updateUser(uid, {
+          disabled: true
+        }).catch((disableError) => {
+          console.error('[MILALA STAFF DISABLE FAILED]', {
+            code: disableError?.code || 'unknown'
+          });
+        });
+      }
+    } else if (existing && authChangesStarted && safeToRestore && oldAuth) {
+      try {
+        const restoreData = {
+          disabled: oldAuth.disabled,
+          displayName: oldAuth.displayName ?? null
+        };
+
+        if (oldAuth.email) {
+          restoreData.email = oldAuth.email;
+        }
+
+        await authAdmin().updateUser(uid, restoreData);
+
+        await authAdmin().setCustomUserClaims(
+          uid,
+          oldAuth.customClaims || {}
+        );
+      } catch (restoreError) {
+        console.error('[MILALA STAFF AUTH RESTORE FAILED]', {
+          code: restoreError?.code || 'unknown'
+        });
+
+        await authAdmin().updateUser(uid, {
+          disabled: true
+        }).catch(() => {});
+      }
+    } else if (
+      existing &&
+      rootCommitted &&
+      !safeToRestore &&
+      uid
+    ) {
+      await authAdmin().updateUser(uid, {
+        disabled: true
+      }).catch(() => {});
+
+      console.error('[MILALA STAFF REQUIRES RECONCILIATION]', {
+        staffId,
+        rootCommitted: true
+      });
+    }
+
+    console.error('[MILALA STAFF SAVE FAILED]', {
+      code: error?.code || 'unknown',
+      name: error?.name || 'Error',
+      rootCommitted,
+      databaseRollbackOk,
+      profileRollbackOk,
+      message: String(error?.message || '').slice(0, 300)
+    });
+
+    if (error instanceof HttpsError) {
+      throw error;
+    }
+
+    fail('internal', 'Gagal menyimpan akun staf.');
   }
 });

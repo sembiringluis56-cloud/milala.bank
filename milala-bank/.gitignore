@@ -11,3 +11,9 @@ service-account*.json
 *-service-account*.json
 *firebase-adminsdk*.json
 *.pem
+
+*.bak
+
+# Temporary admin and diagnostic scripts
+reset-admin-password-temp.js
+scripts/inspect-milala-staff-node.js
