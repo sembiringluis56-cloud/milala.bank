@@ -1,0 +1,45 @@
+/* MILALA BANK official brand identity - isolated overrides (no banking logic changes) */
+.brand-mark,
+.public-brand-icon,
+.login-mark i,
+.hero-card-logo {
+  background: #f5f8fc;
+  color: #0b1f3a;
+  box-shadow: 0 6px 18px rgba(10, 67, 148, .14);
+  overflow: hidden;
+}
+.brand-mark img,
+.public-brand-icon img,
+.login-mark i img,
+.hero-card-logo img {
+  display: block;
+  width: 86%;
+  height: 86%;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+.brand-mark { flex: 0 0 43px; }
+.public-brand-icon { flex: 0 0 43px; }
+.login-mark i { flex: 0 0 46px; }
+.hero-card-logo { flex: 0 0 34px; }
+.milala-about-wordmark {
+  width: min(100%, 260px);
+  height: auto;
+  object-fit: contain;
+  flex: 0 0 auto;
+}
+.milala-footer-brand { display: flex; align-items: center; gap: 10px; }
+.milala-footer-brand img {
+  display: block;
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+  background: #f5f8fc;
+  border-radius: 11px;
+  padding: 4px;
+}
+@media (max-width: 700px) {
+  .public-brand-icon { flex-basis: 38px; }
+  .milala-about-wordmark { width: 122px; }
+  .milala-footer-brand img { width: 32px; height: 32px; }
+}

@@ -1,0 +1,24 @@
+{
+  "name": "MILALA BANK — Portal Simulasi",
+  "short_name": "MILALA BANK",
+  "description": "Portal layanan perbankan digital simulasi untuk pembelajaran.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f5f8fc",
+  "theme_color": "#0b1f3a",
+  "icons": [
+    {
+      "src": "assets/img/milala-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "assets/img/milala-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
