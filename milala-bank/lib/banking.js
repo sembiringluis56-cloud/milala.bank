@@ -444,7 +444,7 @@ exports.completeCustomerRegistration = onCall(async (request) => {
   if (!pending) fail('not-found', 'Data pendaftaran tidak ditemukan. Silakan daftar kembali.');
   let createdCustomerId = null;
   let createdProfile = null;
-  const result = await rootRef().transaction((current) => {
+  const result = await withLiveRoot((ref) => ref.transaction((current) => {
     if (!current) return;
     const state = normalizeState(current);
     if (state.customerUsers.some((x) => x.uid === auth.uid)) {
@@ -475,11 +475,19 @@ exports.completeCustomerRegistration = onCall(async (request) => {
     createdCustomerId = customerId;
     createdProfile = { uid: auth.uid, customerId, email: pending.email, active: true, createdAt: nowIso() };
     return state;
-  }, undefined, false);
+  }, undefined, false));
   if (!result.committed) {
     const after = normalizeState((await rootRef().get()).val());
     createdCustomerId = after?.customerUsers.find((x) => x.uid === auth.uid)?.customerId || null;
-    if (!createdCustomerId) fail('already-exists', 'Email sudah terhubung ke nasabah lain, cabang tidak aktif, atau data berubah.');
+    if (!createdCustomerId) {
+      if (after?.customers.some((c) => String(c.email || '').trim().toLowerCase() === String(pending.email || '').trim().toLowerCase())) {
+        fail('already-exists', 'Email sudah tercatat pada data nasabah. Periksa daftar nasabah melalui Super Admin; jangan buat akun ganda.');
+      }
+      if (!after?.branches.some((b) => b.id === pending.branch && b.active)) {
+        fail('failed-precondition', 'Cabang pendaftaran tidak aktif atau tidak ditemukan. Hubungi Super Admin.');
+      }
+      fail('aborted', 'Data berubah saat membuat rekening. Coba tombol Saya sudah verifikasi sekali lagi.');
+    }
   }
   if (!createdCustomerId) fail('internal', 'Profil nasabah gagal dibuat.');
   const profile = createdProfile || { uid: auth.uid, customerId: createdCustomerId, email: pending.email, active: true, createdAt: nowIso() };
